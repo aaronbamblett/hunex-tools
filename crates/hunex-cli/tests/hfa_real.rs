@@ -1,7 +1,7 @@
 //! Real-archive checks, gated on HUNEX_HFA_DIR (the folder with data01000.hfa .. data01400.hfa).
 //! The stored chs entries are read from the sibling `../chs` folder and the decompressed
-//! reference scripts from `../raw`. HUNEX_WORK picks the scratch folder (default: the system
-//! temp folder); the end-to-end test removes its folder when it finishes.
+//! reference scripts from `../raw`. HUNEX_WORK picks the scratch folder. The checks that write to it are
+//! skipped when it is not set, and the end-to-end test removes its folder when it finishes.
 
 use std::fs;
 use std::path::{Path, PathBuf};
@@ -115,12 +115,12 @@ fn archives_rewrite_byte_for_byte_from_their_entries() {
     println!("all five archives rewrite byte-for-byte");
 }
 
-fn work_root() -> PathBuf {
-    match std::env::var_os("HUNEX_WORK") {
-        Some(dir) => PathBuf::from(dir),
-        None => std::env::temp_dir(),
+fn work_root() -> Option<PathBuf> {
+    let dir = std::env::var_os("HUNEX_WORK").map(PathBuf::from);
+    if dir.is_none() {
+        eprintln!("HUNEX_WORK is not set; skipping the archive round trip");
     }
-    .join(format!("hunex-tools-e2e-{}", std::process::id()))
+    dir.map(|dir| dir.join(format!("hunex-tools-e2e-{}", std::process::id())))
 }
 
 /// Replaces the quoted text of the first `string S_` line of an assembly listing.
@@ -144,7 +144,9 @@ fn end_to_end_unpack_pack_and_edit_one_script() {
     let Some(dir) = hfa_dir() else {
         return;
     };
-    let work = work_root();
+    let Some(work) = work_root() else {
+        return;
+    };
     fs::create_dir_all(&work).unwrap();
 
     for name in ARCHIVES.into_iter().chain(["data00200"]) {
@@ -236,4 +238,63 @@ fn end_to_end_unpack_pack_and_edit_one_script() {
     println!("end to end: edited 1_0.chs survives; only that entry changed in the archive");
 
     fs::remove_dir_all(&work).unwrap();
+}
+
+#[test]
+fn data00000_unpacks_and_packs_back_byte_for_byte() {
+    let Some(dir) = hfa_dir() else {
+        return;
+    };
+    let original = dir.join("data00000.hfa");
+    if !original.exists() {
+        eprintln!("data00000.hfa is not in HUNEX_HFA_DIR; skipping");
+        return;
+    }
+    // The archive is 157 MB; its copies go to HUNEX_WORK (a folder under /var/tmp), not /tmp.
+    let Some(base) = std::env::var_os("HUNEX_WORK").map(PathBuf::from) else {
+        eprintln!("HUNEX_WORK is not set; skipping the data00000 round trip");
+        return;
+    };
+    let work = base.join(format!("data00000-{}", std::process::id()));
+    fs::create_dir_all(&work).unwrap();
+    let archive = path_str(&original);
+
+    let raw = work.join("raw");
+    hunex(&["hfa", "unpack", archive, "-o", path_str(&raw)]);
+    let manifest = fs::read_to_string(raw.join("hfa-manifest.txt")).unwrap();
+    assert!(manifest.contains("\tface_on_ja(2).cbg\tface_on_ja.cbg\n"));
+    let packed = work.join("raw.hfa");
+    hunex(&["hfa", "pack", path_str(&raw), "-o", path_str(&packed)]);
+    assert_eq!(read(&packed), read(&original), "raw unpack and pack differ");
+
+    let decompressed = work.join("decompressed");
+    hunex(&[
+        "hfa",
+        "unpack",
+        archive,
+        "-o",
+        path_str(&decompressed),
+        "--decompress",
+    ]);
+    let again = work.join("decompressed.hfa");
+    hunex(&[
+        "hfa",
+        "pack",
+        path_str(&decompressed),
+        "-o",
+        path_str(&again),
+        "--base",
+        archive,
+    ]);
+    assert_eq!(
+        read(&again),
+        read(&original),
+        "decompressed unpack and pack differ"
+    );
+
+    fs::remove_dir_all(&work).unwrap();
+}
+
+fn path_str(path: &Path) -> &str {
+    path.to_str().unwrap()
 }

@@ -130,10 +130,11 @@ fn writer_rejects_bad_and_duplicate_names() {
         Archive::new(vec![Entry::new(String::new(), Cow::Borrowed(b""))]).write(),
         Err(WriteError::BadName { index: 0 })
     );
-    assert_eq!(
-        Archive::new(vec![entry("x", b"1"), entry("x", b"2")]).write(),
-        Err(WriteError::DuplicateName { index: 1 })
-    );
+    let repeated = Archive::new(vec![entry("x", b"1"), entry("x", b"2")])
+        .write()
+        .unwrap();
+    let parsed = Archive::parse(&repeated).unwrap();
+    assert_eq!(parsed.entries()[1].data(), b"2");
     let max = "m".repeat(MAX_NAME_LEN);
     let bytes = Archive::new(vec![Entry::new(max.clone(), Cow::Borrowed(b"ok"))])
         .write()

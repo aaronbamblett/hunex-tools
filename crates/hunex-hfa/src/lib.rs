@@ -7,7 +7,19 @@
 //! [`Archive::parse`] accepts only that packed layout: entries start at offset zero and each
 //! begins where the previous one ends, the data ends at the end of the file, and the reserved
 //! bytes are zero. [`Archive::write`] produces the same layout.
+//!
+//! ```
+//! use std::borrow::Cow;
+//! use hunex_hfa::{Archive, Entry};
+//!
+//! let archive = Archive::new(vec![Entry::new("a.bin".to_string(), Cow::Borrowed(b"xyz"))]);
+//! let bytes = archive.write().unwrap();
+//! let parsed = Archive::parse(&bytes).unwrap();
+//! assert_eq!(parsed.entries()[0].name(), "a.bin");
+//! assert_eq!(parsed.entries()[0].data(), b"xyz");
+//! ```
 
+#![warn(missing_docs)]
 #![no_std]
 
 extern crate alloc;
@@ -16,11 +28,11 @@ extern crate alloc;
 mod tests;
 
 use alloc::borrow::Cow;
-use alloc::collections::BTreeSet;
 use alloc::string::String;
 use alloc::vec::Vec;
 use core::fmt;
 
+/// The magic that starts every archive: the ASCII text `HUNEXGGEFA10`.
 pub const MAGIC: &[u8] = b"HUNEXGGEFA10";
 
 const HEADER_SIZE: usize = 0x10;
@@ -33,6 +45,7 @@ const SIZE_AT: usize = 0x64;
 /// The longest name a writer accepts: the field must keep a NUL terminator.
 pub const MAX_NAME_LEN: usize = NAME_FIELD - 1;
 
+/// One entry of an archive: a name and its data.
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct Entry<'a> {
     name: String,
@@ -40,51 +53,94 @@ pub struct Entry<'a> {
 }
 
 impl<'a> Entry<'a> {
+    /// Creates an entry from a name and its data. Borrowed data stays borrowed.
     pub fn new(name: String, data: Cow<'a, [u8]>) -> Entry<'a> {
         Entry { name, data }
     }
 
+    /// The name, as stored in the archive.
     pub fn name(&self) -> &str {
         &self.name
     }
 
+    /// The data of the entry.
     pub fn data(&self) -> &[u8] {
         &self.data
     }
 
+    /// The size of the data in bytes.
     pub fn size(&self) -> usize {
         self.data.len()
     }
 }
 
+/// An archive: its entries in the order they are stored.
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct Archive<'a> {
     entries: Vec<Entry<'a>>,
 }
 
+/// Errors from reading an HFA archive.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum Error {
+    /// The file does not start with the magic.
     BadMagic,
-    Truncated { offset: usize },
-    CountPastEnd { count: u32 },
-    NameNotTerminated { index: usize },
-    NameTrailingData { index: usize },
-    NameNotUtf8 { index: usize },
-    NonZeroReserved { index: usize },
-    NotContiguous { index: usize },
-    DataPastEnd { index: usize },
-    TrailingBytes { offset: usize },
+    /// The file ends before the field at `offset`.
+    Truncated {
+        /// Byte offset where the data ends.
+        offset: usize,
+    },
+    /// The entry count is larger than the file can hold.
+    CountPastEnd {
+        /// The entry count the header states.
+        count: u32,
+    },
+    /// The name of entry `index` has no terminating zero byte.
+    NameNotTerminated {
+        /// Index of the entry.
+        index: usize,
+    },
+    /// The name of entry `index` has bytes after its terminator.
+    NameTrailingData {
+        /// Index of the entry.
+        index: usize,
+    },
+    /// The name of entry `index` is not valid UTF-8.
+    NameNotUtf8 {
+        /// Index of the entry.
+        index: usize,
+    },
+    /// A reserved field of entry `index` is not zero.
+    NonZeroReserved {
+        /// Index of the entry.
+        index: usize,
+    },
+    /// Entry `index` does not start where the previous entry ends.
+    NotContiguous {
+        /// Index of the entry.
+        index: usize,
+    },
+    /// The data of entry `index` runs past the end of the file.
+    DataPastEnd {
+        /// Index of the entry.
+        index: usize,
+    },
+    /// Bytes remain after the last entry.
+    TrailingBytes {
+        /// Byte offset of the first unused byte.
+        offset: usize,
+    },
 }
 
+/// Errors from writing an HFA archive.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum WriteError {
     /// The name is empty, longer than [`MAX_NAME_LEN`], or contains a NUL.
     BadName {
+        /// Index of the entry that cannot be written.
         index: usize,
     },
-    DuplicateName {
-        index: usize,
-    },
+    /// The data or the entry count does not fit the 32-bit fields.
     TooLarge,
 }
 
@@ -127,9 +183,6 @@ impl fmt::Display for WriteError {
             WriteError::BadName { index } => {
                 write!(f, "entry {index}: name is empty, too long, or has a NUL")
             }
-            WriteError::DuplicateName { index } => {
-                write!(f, "entry {index}: name is used more than once")
-            }
             WriteError::TooLarge => write!(f, "archive data does not fit the 32-bit offsets"),
         }
     }
@@ -139,14 +192,17 @@ impl core::error::Error for Error {}
 impl core::error::Error for WriteError {}
 
 impl<'a> Archive<'a> {
+    /// Creates an archive from its entries, in the order given.
     pub fn new(entries: Vec<Entry<'a>>) -> Archive<'a> {
         Archive { entries }
     }
 
+    /// The entries in order.
     pub fn entries(&self) -> &[Entry<'a>] {
         &self.entries
     }
 
+    /// Takes the entries out of the archive.
     pub fn into_entries(self) -> Vec<Entry<'a>> {
         self.entries
     }
@@ -171,15 +227,11 @@ impl<'a> Archive<'a> {
 
     /// Writes the archive in entry order, packed with no padding.
     pub fn write(&self) -> Result<Vec<u8>, WriteError> {
-        let mut names = BTreeSet::new();
         let mut total = 0usize;
         for (index, entry) in self.entries.iter().enumerate() {
             let name = entry.name.as_bytes();
             if name.is_empty() || name.len() > MAX_NAME_LEN || name.contains(&0) {
                 return Err(WriteError::BadName { index });
-            }
-            if !names.insert(entry.name.as_str()) {
-                return Err(WriteError::DuplicateName { index });
             }
             total = total
                 .checked_add(entry.data.len())
@@ -225,8 +277,11 @@ fn parse_name(index: usize, field: &[u8]) -> Result<String, Error> {
 /// One table entry: its name, and its data's offset and size from the start of the data.
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct TocEntry {
+    /// Name of the entry, as stored.
     pub name: String,
+    /// Offset of the entry's data from the start of the data area.
     pub offset: usize,
+    /// Size of the entry's data in bytes.
     pub size: usize,
 }
 

@@ -5,4 +5,4 @@ Reader and writer for HFA script archives of the HuneX engine. An archive is a h
 - `Archive::parse(bytes)` reads an archive and borrows the entry data.
 - `Archive::write()` writes entries in order, with the layout the originals use.
 
-Part of the [hunex-tools](https://github.com/aaronbamblett/hunex-tools) project. Unofficial; not affiliated with HuneX or TYPE-MOON. The crate does not include any game data.
+Part of the [hunex-tools](https://github.com/aaronbamblett/hunex-tools) project. Unofficial; not affiliated with HuneX. The crate does not include any game data.
