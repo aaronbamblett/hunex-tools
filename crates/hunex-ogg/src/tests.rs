@@ -98,3 +98,19 @@ fn random_and_mutated_pages_never_panic() {
         let _ = pages(&mutated[..cut]);
     }
 }
+
+#[test]
+fn a_packet_split_over_pages_reads_back_whole() {
+    use crate::{packets, write_packet, write_page, FLAG_BOS, FLAG_EOS};
+    let long: Vec<u8> = (0..70_000u32).map(|i| (i * 7 % 251) as u8).collect();
+    let mut out = Vec::new();
+    write_page(&mut out, FLAG_BOS, 0, 9, 0, &[b"head"]).unwrap();
+    let next = write_packet(&mut out, 0, 0, 9, 1, &long);
+    assert_eq!(next, 3, "a 70000-byte packet takes two pages");
+    write_packet(&mut out, FLAG_EOS, 5, 9, next, b"tail");
+    let parsed = packets(&out).unwrap();
+    assert_eq!(parsed.len(), 3);
+    assert_eq!(parsed[0], b"head");
+    assert_eq!(parsed[1], long);
+    assert_eq!(parsed[2], b"tail");
+}

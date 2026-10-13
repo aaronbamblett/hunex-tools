@@ -1,4 +1,4 @@
-//! Nintendo OPUS audio: info, and remux to Ogg Opus.
+//! Nintendo OPUS audio: info, remux to Ogg Opus, and convert back.
 
 use std::fs;
 use std::process::ExitCode;
@@ -14,7 +14,11 @@ hunex nopus: Nintendo OPUS audio (Switch stream files)
 Usage:
   hunex nopus info <in.opus>               channels, rate, packets and length
   hunex nopus to-ogg <in.opus> -o <out.ogg>  remux to Ogg Opus, packets unchanged
+  hunex nopus from-ogg <in.ogg> -o <out.opus> convert Ogg Opus back to Nintendo OPUS
   hunex nopus help
+
+from-ogg restores the packet fields that to-ogg stores in a comment. A file without that comment
+gets zero fields, and the command says so.
 
 Ogg Opus is an intermediate. To use the audio in the game, decode it and encode Ogg Vorbis
 (for example with ffmpeg and libvorbis), then wrap it with `hunex hw wrap`.
@@ -22,6 +26,7 @@ Ogg Opus is an intermediate. To use the audio in the game, decode it and encode 
 
 const INFO_USAGE: &str = "usage: hunex nopus info <in.opus>\n";
 const TO_OGG_USAGE: &str = "usage: hunex nopus to-ogg <in.opus> -o <out.ogg>\n";
+const FROM_OGG_USAGE: &str = "usage: hunex nopus from-ogg <in.ogg> -o <out.opus>\n";
 
 /// Runs the command with the arguments that follow its name. Returns the exit code.
 pub fn run(args: &[String]) -> ExitCode {
@@ -33,6 +38,7 @@ pub fn run(args: &[String]) -> ExitCode {
         }
         Some("info") => info(&args[1..]),
         Some("to-ogg") => to_ogg(&args[1..]),
+        Some("from-ogg") => from_ogg(&args[1..]),
         Some(other) => {
             eprintln!("hunex nopus: unknown command `{other}`");
             usage(HELP)
@@ -90,4 +96,29 @@ fn to_ogg_file(input: &str, output: &str) -> Result<(), CliError> {
 
 fn message(context: &str, error: impl std::fmt::Display) -> CliError {
     CliError::Message(format!("{context}: {error}"))
+}
+
+fn from_ogg(args: &[String]) -> ExitCode {
+    let Ok(parsed) = parse(args, &["-o"], &[]) else {
+        return usage(FROM_OGG_USAGE);
+    };
+    let (&[input], Some(output)) = (parsed.positional.as_slice(), parsed.value("-o")) else {
+        return usage(FROM_OGG_USAGE);
+    };
+    finish(from_ogg_file(input, output))
+}
+
+fn from_ogg_file(input: &str, output: &str) -> Result<(), CliError> {
+    let bytes = fs::read(input).map_err(|e| message(input, e))?;
+    let converted = hunex_nopus::from_ogg(&bytes).map_err(|e| message(input, e))?;
+    fs::write(output, &converted.file).map_err(|e| message(output, e))?;
+    if converted.fields_recorded {
+        outln!("wrote {output}: {} bytes", converted.file.len());
+    } else {
+        outln!(
+            "wrote {output}: {} bytes; the input has no packet fields, so they are zero",
+            converted.file.len()
+        );
+    }
+    Ok(())
 }

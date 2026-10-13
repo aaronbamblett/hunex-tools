@@ -228,6 +228,29 @@ pub fn write_page(
     if segments.len() > MAX_SEGMENTS {
         return Err(Error::TooManySegments);
     }
+    let data: Vec<u8> = packets.concat();
+    write_raw_page(
+        out,
+        header_type,
+        granule,
+        serial,
+        sequence,
+        &segments,
+        &data,
+    );
+    Ok(())
+}
+
+/// Writes one page from its segment table and data.
+fn write_raw_page(
+    out: &mut Vec<u8>,
+    header_type: u8,
+    granule: u64,
+    serial: u32,
+    sequence: u32,
+    segments: &[u8],
+    data: &[u8],
+) {
     let start = out.len();
     out.extend_from_slice(CAPTURE);
     out.push(0);
@@ -237,11 +260,72 @@ pub fn write_page(
     out.extend_from_slice(&sequence.to_le_bytes());
     out.extend_from_slice(&[0; 4]);
     out.push(segments.len() as u8);
-    out.extend_from_slice(&segments);
-    for packet in packets {
-        out.extend_from_slice(packet);
-    }
+    out.extend_from_slice(segments);
+    out.extend_from_slice(data);
     let crc = crc_update(0, &out[start..]);
     out[start + CRC_OFFSET..start + CRC_OFFSET + 4].copy_from_slice(&crc.to_le_bytes());
-    Ok(())
+}
+
+/// Writes one packet, split over as many pages as its lacing needs. Pages after the first carry
+/// `FLAG_CONTINUED`; every page but the last has the granule position -1. Returns the sequence
+/// number the next page should use.
+pub fn write_packet(
+    out: &mut Vec<u8>,
+    flags: u8,
+    granule: u64,
+    serial: u32,
+    first_sequence: u32,
+    packet: &[u8],
+) -> u32 {
+    let mut segments = Vec::new();
+    let mut rest = packet.len();
+    while rest >= MAX_SEGMENTS {
+        segments.push(MAX_SEGMENTS as u8);
+        rest -= MAX_SEGMENTS;
+    }
+    segments.push(rest as u8);
+    let mut sequence = first_sequence;
+    let mut offset = 0usize;
+    let groups: Vec<&[u8]> = segments.chunks(MAX_SEGMENTS).collect();
+    for (index, group) in groups.iter().enumerate() {
+        let bytes: usize = group.iter().map(|&len| usize::from(len)).sum();
+        let last = index + 1 == groups.len();
+        let page_flags = match (index, last) {
+            (0, true) => flags,
+            (0, false) => flags & !FLAG_EOS,
+            (_, true) => FLAG_CONTINUED | (flags & FLAG_EOS),
+            (_, false) => FLAG_CONTINUED,
+        };
+        let page_granule = if last { granule } else { u64::MAX };
+        write_raw_page(
+            out,
+            page_flags,
+            page_granule,
+            serial,
+            sequence,
+            group,
+            &packet[offset..offset + bytes],
+        );
+        offset += bytes;
+        sequence += 1;
+    }
+    sequence
+}
+
+/// Reads every packet of the file's logical stream, joining packets that span pages.
+pub fn packets(bytes: &[u8]) -> Result<Vec<Vec<u8>>, Error> {
+    let mut packets = Vec::new();
+    let mut current = Vec::new();
+    for page in pages(bytes)? {
+        let mut data = page.data;
+        for &len in page.segments {
+            let (chunk, rest) = data.split_at(usize::from(len));
+            current.extend_from_slice(chunk);
+            data = rest;
+            if len < 255 {
+                packets.push(core::mem::take(&mut current));
+            }
+        }
+    }
+    Ok(packets)
 }
