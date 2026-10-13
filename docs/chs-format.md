@@ -73,7 +73,7 @@ The decoder reports: bad magic, truncated data, a malformed header, an unregiste
 ## Known limits
 
 - The pool start is the smallest string pointer. A crafted file whose smallest pointer targets a return inside the code is accepted, and the code after that return is read as pool data. Real files cannot be told apart from this case, because the format has no explicit code length.
-- Pointers computed at runtime, or stored in plain 0x00 dwords, are not recognised as pointers. Lowering does not move them. The sample files show none, but this is not proven until a relocated script runs in the game. The 0x7B third operand is handled as a pointer; a value that names no string stays a plain dword.
+- Pointers computed at runtime, or stored in plain 0x00 dwords, are not recognised as pointers. Lowering does not move them. The sample files show none. One relocated script ran in the game in the Steam release on 2026-10-13, which does not cover runtime-computed pointers. The 0x7B third operand is handled as a pointer; a value that names no string stays a plain dword.
 - The 0x7B counter is kept as a plain dword. Its meaning is unknown, and edits do not renumber it.
 - The stack effect of each opcode and the operands of most commands are not modelled.
-- Relocation and editing are verified on sample files and in the library tests, not yet inside the game.
+- Relocation and editing are verified on sample files and in the library tests. One relocated script ran in the game in the Steam release on 2026-10-13; that is a single script.

@@ -11,7 +11,8 @@
 //!
 //! Known risk: a pointer that is computed at runtime, or stored in a plain 0x00 dword, is not
 //! a [`Operand::Label`] or [`Operand::Str`], so lowering does not move it. The 250 files show
-//! no such pointer, but that is not proven until a relocated script runs in the game.
+//! no such pointer. One relocated script ran in the game on 2026-10-13; that does not cover
+//! runtime-computed pointers.
 
 use alloc::vec::Vec;
 use core::fmt;

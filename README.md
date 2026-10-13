@@ -16,8 +16,8 @@ This is an unofficial fan project. It is not affiliated with HuneX or TYPE-MOON.
 - `.chs` scripts: exact decode and re-encode verified on all 250 Mahoyo scenes. Lift, lower and the text form also round-trip all 250.
 - Editing: insertion of instructions and a new string, then re-encoding, verified on all 250 scenes in the test suite.
 - HFA archives: all five archives rewrite byte for byte, and unpack then pack reproduces them.
-- LenZu: all 250 entries decompress to the reference scripts. The literal-only encoder round-trips through the decoder, but the stream is larger than its input and it is not yet confirmed that the game accepts it.
-- Not verified inside the game. Edited scripts and archives have not been run in the game.
+- LenZu: all 250 entries decompress to the reference scripts. The literal-only encoder round-trips through the decoder and the game accepts its streams, but the stream is larger than its input and does not shrink data.
+- In the game: on 2026-10-13 one edited script was assembled, packed with `hunex hfa pack --base` as a literal-only LenZu entry, and then loaded and played in the Steam release. The script had one inserted instruction at the start, which moves every code and string pointer, and a changed image string. This confirms that literal-only LenZu streams are accepted, that archives with changed entry sizes and offsets are accepted, and that relocation works for that script. It is one script; runtime-computed pointers remain a known limit.
 
 ## Install
 

@@ -3,9 +3,9 @@
 //! [`decompress`] reads the variant seen in the game's archives: seven-bit Huffman symbols and
 //! back-reference distances with seven low bits, base two. It checks the header checksum.
 //!
-//! [`compress_literal`] writes a stream of literal runs only. The format allows it and the
-//! decoder reads it back, but the stream is larger than its input. It is not yet known whether
-//! the game accepts such streams.
+//! [`compress_literal`] writes a stream of literal runs only. The format allows it, the decoder
+//! reads it back, and the game accepts it (checked in-engine on one script, 2026-10-13). The
+//! stream is larger than its input and does not shrink data.
 
 #![no_std]
 

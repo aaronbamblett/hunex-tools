@@ -47,11 +47,10 @@ Start with a 64-bit accumulator at zero. For each plain byte at index i, add the
 
 `compress_literal` writes the header with the option bytes above, a dense table with all 128 weights equal to one, and a body of literal runs of up to 128 bytes. With every weight equal to one, symbol s is coded as the seven-bit value 127 - s. The writer does not search for matches, so its output is larger than its input.
 
-The format permits this stream, and the reader decodes it, but we have not confirmed that the game accepts a stream without back-references.
+The format permits this stream, the reader decodes it, and the game accepts it: a literal-only stream was loaded and played in the Steam release on 2026-10-13 (one script).
 
 ## Unknowns
 
-- Whether the game accepts literal-only streams.
 - Whether the game checks the checksum, and what it does with the field at 0x2C.
 - Overlapping back-references: the reader handles them, but the samples contain none.
 - Symbol widths other than 7, and table counts of zero.

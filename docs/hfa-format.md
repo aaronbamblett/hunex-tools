@@ -38,8 +38,8 @@ These rules are stricter than the format might need. They accept exactly the lay
 
 The writer produces the same layout. It rejects an empty name, a name of 0x60 bytes or more, a name with a NUL, a repeated name, and sizes that do not fit 32-bit offsets. Record fields are written in the order above, with the reserved bytes zeroed.
 
-## Unknowns
+## In the game and unknowns
 
-- Whether the game accepts an archive whose entry sizes differ from the originals. Offsets shift for every later entry, so changing one entry changes its successors' records.
+- Changed entry sizes: an archive whose entry sizes and offsets changed was loaded and played in the Steam release on 2026-10-13 (one script). Offsets shift for every later entry, so changing one entry changes its successors' records.
 - Whether the game checks the reserved bytes, or looks up entries by name, by index, or both.
 - Names outside ASCII. The sample names are ASCII.
