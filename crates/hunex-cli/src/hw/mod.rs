@@ -7,6 +7,7 @@ use hunex_hw::{wrap, Hw};
 
 use crate::cli::{finish, parse, usage, CliError};
 
+/// Help text for the `hw` (audio) command.
 pub const HELP: &str = "\
 hunex hw: .hw audio (64-byte header and an Ogg Vorbis stream)
 
@@ -23,11 +24,12 @@ const INFO_USAGE: &str = "usage: hunex hw info <file.hw>\n";
 const UNWRAP_USAGE: &str = "usage: hunex hw unwrap <file.hw> -o <out.ogg>\n";
 const WRAP_USAGE: &str = "usage: hunex hw wrap <in.ogg> -o <out.hw>\n";
 
+/// Runs the command with the arguments that follow its name. Returns the exit code.
 pub fn run(args: &[String]) -> ExitCode {
     match args.first().map(String::as_str) {
         None => usage(HELP),
         Some("help" | "-h" | "--help") => {
-            print!("{HELP}");
+            out!("{HELP}");
             ExitCode::SUCCESS
         }
         Some("info") => info(&args[1..]),
@@ -54,11 +56,11 @@ fn info_file(path: &str) -> Result<(), CliError> {
     let bytes = fs::read(path).map_err(|e| message(path, e))?;
     let hw = Hw::parse(&bytes).map_err(|e| message(path, e))?;
     let seconds = f64::from(hw.sample_frames) / f64::from(hw.sample_rate);
-    println!("file size:     {} bytes", bytes.len());
-    println!("payload:       {} bytes (Ogg Vorbis)", hw.payload().len());
-    println!("sample rate:   {} Hz", hw.sample_rate);
-    println!("channels:      {}", hw.channels);
-    println!("sample frames: {} ({seconds:.6} s)", hw.sample_frames);
+    outln!("file size:     {} bytes", bytes.len());
+    outln!("payload:       {} bytes (Ogg Vorbis)", hw.payload().len());
+    outln!("sample rate:   {} Hz", hw.sample_rate);
+    outln!("channels:      {}", hw.channels);
+    outln!("sample frames: {} ({seconds:.6} s)", hw.sample_frames);
     Ok(())
 }
 

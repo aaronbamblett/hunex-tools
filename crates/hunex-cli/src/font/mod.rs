@@ -48,7 +48,7 @@ pub fn run(args: &[String]) -> ExitCode {
     match args.first().map(String::as_str) {
         None => usage(HELP),
         Some("help" | "-h" | "--help") => {
-            print!("{HELP}");
+            out!("{HELP}");
             ExitCode::SUCCESS
         }
         Some("info") => info(&args[1..]),
@@ -75,14 +75,14 @@ fn info(args: &[String]) -> ExitCode {
 fn info_file(path: &str) -> Result<(), CliError> {
     let table = read_table(path)?;
     let records = table.records();
-    println!("glyphs:        {}", records.len());
+    outln!("glyphs:        {}", records.len());
     match table.coords() {
-        Some(_) => println!("coordinates:   present (page, x, y, width, height per glyph)"),
-        None => println!("coordinates:   absent"),
+        Some(_) => outln!("coordinates:   present (page, x, y, width, height per glyph)"),
+        None => outln!("coordinates:   absent"),
     }
     let codes = records.iter().map(|r| r.code);
     if let (Some(low), Some(high)) = (codes.clone().min(), codes.max()) {
-        println!(
+        outln!(
             "code range:    {} .. {}",
             describe_code(low),
             describe_code(high)
@@ -90,16 +90,16 @@ fn info_file(path: &str) -> Result<(), CliError> {
     }
     let indices = records.iter().map(|r| r.index);
     if let (Some(low), Some(high)) = (indices.clone().min(), indices.max()) {
-        println!("index range:   {low} .. {high}");
+        outln!("index range:   {low} .. {high}");
     }
     let sorted = records.windows(2).all(|pair| pair[0].code < pair[1].code);
-    println!(
+    outln!(
         "code order:    {}",
         if sorted { "sorted" } else { "not sorted" }
     );
     let coords = table.coords().map(<[Coord]>::to_vec);
     let dense = Table::from_parts(records.to_vec(), coords).is_ok();
-    println!(
+    outln!(
         "index check:   {}",
         if dense {
             "dense, 0 to N-1"
@@ -112,7 +112,7 @@ fn info_file(path: &str) -> Result<(), CliError> {
         *pages.entry(record.index / GLYPHS_PER_PAGE).or_insert(0) += 1;
     }
     for (page, count) in &pages {
-        println!("page {page}:       {count} glyphs");
+        outln!("page {page}:       {count} glyphs");
     }
     Ok(())
 }

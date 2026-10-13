@@ -10,6 +10,7 @@ use hunex_mrg::{kind, Kind};
 use crate::cli::{finish, parse, usage, CliError};
 use crate::hfa::check_file_name;
 
+/// Help text for the `mrg` (MRG sets) command.
 pub const HELP: &str = "\
 hunex mrg: MRG sets (.hed index, .mrg data, .nam names)
 
@@ -25,11 +26,12 @@ their wrapper; other entries are written as stored, including sector padding.
 const LIST_USAGE: &str = "usage: hunex mrg list <set>\n";
 const UNPACK_USAGE: &str = "usage: hunex mrg unpack <set> -o <dir>\n";
 
+/// Runs the command with the arguments that follow its name. Returns the exit code.
 pub fn run(args: &[String]) -> ExitCode {
     match args.first().map(String::as_str) {
         None => usage(HELP),
         Some("help" | "-h" | "--help") => {
-            print!("{HELP}");
+            out!("{HELP}");
             ExitCode::SUCCESS
         }
         Some("list") => list(&args[1..]),
@@ -188,7 +190,7 @@ fn unpack_set(path: &str, dir: &str) -> Result<(), CliError> {
             .map_err(|e| CliError::Message(format!("{}: {e}", target.display())))?;
         written += 1;
     }
-    println!("unpacked {written} entries to {dir}");
+    outln!("unpacked {written} entries to {dir}");
     Ok(())
 }
 

@@ -10,6 +10,7 @@ use hunex_chs::Script;
 
 use crate::cli::{finish, usage, CliError};
 
+/// Help text for the `chs` (compiled scripts) command.
 pub const HELP: &str = "\
 hunex chs: HuneX compiled scripts (.chs)
 
@@ -25,11 +26,12 @@ Usage:
 const ROUNDTRIP_USAGE: &str = "usage: hunex chs roundtrip <file.chs>\n";
 const ASSEMBLE_USAGE: &str = "usage: hunex chs asm <in.txt> -o <out.chs>\n";
 
+/// Runs the command with the arguments that follow its name. Returns the exit code.
 pub fn run(args: &[String]) -> ExitCode {
     match args.first().map(String::as_str) {
         None => usage(HELP),
         Some("help" | "-h" | "--help") => {
-            print!("{HELP}");
+            out!("{HELP}");
             ExitCode::SUCCESS
         }
         Some("dump") => dump::run(&args[1..]),
@@ -60,7 +62,7 @@ fn check_roundtrip(path: &str) -> Result<(), CliError> {
     let (bytes, script) = read_script(path)?;
     let encoded = script.encode();
     if encoded == bytes {
-        println!("identical");
+        outln!("identical");
         return Ok(());
     }
     let offset = encoded

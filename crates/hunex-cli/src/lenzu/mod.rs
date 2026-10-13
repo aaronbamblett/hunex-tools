@@ -26,7 +26,7 @@ pub fn run(args: &[String]) -> ExitCode {
     match args.first().map(String::as_str) {
         None => usage(HELP),
         Some("help" | "-h" | "--help") => {
-            print!("{HELP}");
+            out!("{HELP}");
             ExitCode::SUCCESS
         }
         Some("decompress") => convert(&args[1..], DECOMPRESS_USAGE, Mode::Decompress),

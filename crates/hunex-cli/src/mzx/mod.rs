@@ -1,4 +1,4 @@
-//! MZX0 streams: decompress, and compress with the greedy encoder.
+//! PC MZX0 streams: decompress, and compress with the greedy encoder.
 
 use std::fs;
 use std::process::ExitCode;
@@ -7,23 +7,25 @@ use hunex_mzx::{compress, decompress};
 
 use crate::cli::{finish, parse, usage, CliError};
 
+/// Help text for the `mzx` (MZX0 streams) command.
 pub const HELP: &str = "\
-hunex mzx: MZX0 compressed streams (image tiles)
+hunex mzx: PC MZX0 streams (image tiles)
 
 Usage:
   hunex mzx decompress <in> -o <out>
-  hunex mzx compress <in> -o <out>   greedy: runs, back-references and literals
+  hunex mzx compress <in> -o <out>   greedy: literals and back-references
   hunex mzx help
 ";
 
 const DECOMPRESS_USAGE: &str = "usage: hunex mzx decompress <in> -o <out>\n";
 const COMPRESS_USAGE: &str = "usage: hunex mzx compress <in> -o <out>\n";
 
+/// Runs the command with the arguments that follow its name. Returns the exit code.
 pub fn run(args: &[String]) -> ExitCode {
     match args.first().map(String::as_str) {
         None => usage(HELP),
         Some("help" | "-h" | "--help") => {
-            print!("{HELP}");
+            out!("{HELP}");
             ExitCode::SUCCESS
         }
         Some("decompress") => convert(&args[1..], DECOMPRESS_USAGE, true),

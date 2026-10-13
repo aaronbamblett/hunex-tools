@@ -34,7 +34,7 @@ pub fn run(args: &[String]) -> ExitCode {
     match args.first().map(String::as_str) {
         None => usage(HELP),
         Some("help" | "-h" | "--help") => {
-            print!("{HELP}");
+            out!("{HELP}");
             ExitCode::SUCCESS
         }
         Some("info") => info(&args[1..]),
@@ -66,17 +66,17 @@ fn info_file(path: &str) -> Result<(), CliError> {
     let image = decode(&bytes).map_err(|e| message(path, e))?;
     let header = image.header;
     let stripes = header.height.div_ceil(header.stripe_height);
-    println!("size:          {} x {}", header.width, header.height);
-    println!(
+    outln!("size:          {} x {}", header.width, header.height);
+    outln!(
         "bits per pixel: {} ({})",
         header.bits_per_pixel,
         mode_name(&header)
     );
-    println!(
+    outln!(
         "stripe height: {} ({stripes} stripes)",
         header.stripe_height
     );
-    println!("file size:     {} bytes", bytes.len());
+    outln!("file size:     {} bytes", bytes.len());
     Ok(())
 }
 

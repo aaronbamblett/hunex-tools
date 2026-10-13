@@ -48,11 +48,11 @@ pub fn run(args: &[String]) -> ExitCode {
             ExitCode::from(2)
         }
         Some("help" | "-h" | "--help") => {
-            print!("{HELP}");
+            out!("{HELP}");
             ExitCode::SUCCESS
         }
         Some("-V" | "--version" | "version") => {
-            println!("hunex {VERSION}");
+            outln!("hunex {VERSION}");
             ExitCode::SUCCESS
         }
         Some("chs") => chs::run(&args[1..]),

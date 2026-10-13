@@ -23,9 +23,12 @@ use hunex_chs::{
     opcode_info, Format, Item, LabelId, Operand, PoolEntry, Program, ProgramParts, OPCODES,
 };
 
+/// An error from reading assembly text, with the line it is on when known.
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct AsmError {
+    /// The line number of the error, when known.
     pub line: Option<usize>,
+    /// What is wrong, in plain text.
     pub message: String,
 }
 
@@ -56,6 +59,7 @@ impl fmt::Display for AsmError {
 
 impl std::error::Error for AsmError {}
 
+/// Formats a program as the text that the `chs dump` command writes in its assembly mode.
 pub fn dump(program: &Program) -> String {
     let mut out = String::new();
     let format = match program.format() {

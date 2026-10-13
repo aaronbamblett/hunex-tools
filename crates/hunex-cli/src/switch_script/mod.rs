@@ -10,6 +10,7 @@ use std::io::{Read, Seek, SeekFrom};
 
 use crate::cli::{finish, parse, usage, CliError};
 
+/// Help text for the `switch-script` (Switch scripts) command.
 pub const HELP: &str = "\
 hunex switch-script: Switch scripts (allscr.mrg)
 
@@ -23,11 +24,12 @@ nam.bin (entry 0, the script name table).
 
 const DUMP_USAGE: &str = "usage: hunex switch-script dump <allscr.mrg> -o <dir>\n";
 
+/// Runs the command with the arguments that follow its name. Returns the exit code.
 pub fn run(args: &[String]) -> ExitCode {
     match args.first().map(String::as_str) {
         None => usage(HELP),
         Some("help" | "-h" | "--help") => {
-            print!("{HELP}");
+            out!("{HELP}");
             ExitCode::SUCCESS
         }
         Some("dump") => dump(&args[1..]),
@@ -84,6 +86,6 @@ fn dump_file(input: &str, output: &str) -> Result<(), CliError> {
         fs::write(&target, plain)
             .map_err(|e| CliError::Message(format!("{}: {e}", target.display())))?;
     }
-    println!("dumped {} scripts to {output}", spans.len() - 3);
+    outln!("dumped {} scripts to {output}", spans.len() - 3);
     Ok(())
 }

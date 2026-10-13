@@ -7,6 +7,7 @@ use hunex_nopus::Stream;
 
 use crate::cli::{finish, parse, usage, CliError};
 
+/// Help text for the `nopus` (Nintendo OPUS audio) command.
 pub const HELP: &str = "\
 hunex nopus: Nintendo OPUS audio (Switch stream files)
 
@@ -22,11 +23,12 @@ Ogg Opus is an intermediate. To use the audio in the game, decode it and encode 
 const INFO_USAGE: &str = "usage: hunex nopus info <in.opus>\n";
 const TO_OGG_USAGE: &str = "usage: hunex nopus to-ogg <in.opus> -o <out.ogg>\n";
 
+/// Runs the command with the arguments that follow its name. Returns the exit code.
 pub fn run(args: &[String]) -> ExitCode {
     match args.first().map(String::as_str) {
         None => usage(HELP),
         Some("help" | "-h" | "--help") => {
-            print!("{HELP}");
+            out!("{HELP}");
             ExitCode::SUCCESS
         }
         Some("info") => info(&args[1..]),
@@ -52,16 +54,16 @@ fn info_file(path: &str) -> Result<(), CliError> {
     let bytes = fs::read(path).map_err(|e| message(path, e))?;
     let stream = Stream::parse(&bytes).map_err(|e| message(path, e))?;
     let seconds = stream.decoded_samples() as f64 / f64::from(hunex_nopus::SAMPLE_RATE_OUT);
-    println!("file size:      {} bytes", bytes.len());
-    println!("channels:       {}", stream.channels);
-    println!("input rate:     {} Hz", stream.sample_rate);
-    println!("pre-skip:       {} samples", stream.pre_skip);
-    println!("packets:        {}", stream.packets.len());
-    println!(
+    outln!("file size:      {} bytes", bytes.len());
+    outln!("channels:       {}", stream.channels);
+    outln!("input rate:     {} Hz", stream.sample_rate);
+    outln!("pre-skip:       {} samples", stream.pre_skip);
+    outln!("packets:        {}", stream.packets.len());
+    outln!(
         "total samples:  {} (48 kHz, with pre-skip)",
         stream.total_samples()
     );
-    println!(
+    outln!(
         "decoded length: {} samples ({seconds:.6} s)",
         stream.decoded_samples()
     );

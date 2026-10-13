@@ -41,7 +41,7 @@ pub fn run(args: &[String]) -> ExitCode {
     match args.first().map(String::as_str) {
         None => usage(HELP),
         Some("help" | "-h" | "--help") => {
-            print!("{HELP}");
+            out!("{HELP}");
             ExitCode::SUCCESS
         }
         Some("list") => list(&args[1..]),
@@ -156,7 +156,7 @@ fn unpack_archive(path: &str, dir: &str, decompress: bool) -> Result<(), CliErro
     let manifest_path = dir.join(MANIFEST);
     fs::write(&manifest_path, manifest)
         .map_err(|e| error(&manifest_path.display().to_string(), e))?;
-    println!("unpacked {} entries to {}", toc.len(), dir.display());
+    outln!("unpacked {} entries to {}", toc.len(), dir.display());
     Ok(())
 }
 
@@ -296,7 +296,7 @@ fn pack_archive(dir: &str, output: &str, base: Option<&str>) -> Result<(), CliEr
         .write()
         .map_err(|e| error(&dir.display().to_string(), e))?;
     fs::write(output, &packed).map_err(|e| error(output, e))?;
-    println!("packed {} entries into {output}", manifest.len());
+    outln!("packed {} entries into {output}", manifest.len());
     Ok(())
 }
 

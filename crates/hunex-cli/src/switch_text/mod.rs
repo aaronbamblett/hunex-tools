@@ -8,6 +8,7 @@ use hunex_switch_text::{format_ref, pairs};
 
 use crate::cli::{finish, parse, usage, CliError};
 
+/// Help text for the `switch-text` (Switch script text) command.
 pub const HELP: &str = "\
 hunex switch-text: Switch script text (script_text.mrg)
 
@@ -22,11 +23,12 @@ Writes one line per script id: $000000, a TAB, then the text. --pair picks the l
 const EXPORT_USAGE: &str =
     "usage: hunex switch-text export <script_text.mrg> -o <lines.txt> [--pair N]\n";
 
+/// Runs the command with the arguments that follow its name. Returns the exit code.
 pub fn run(args: &[String]) -> ExitCode {
     match args.first().map(String::as_str) {
         None => usage(HELP),
         Some("help" | "-h" | "--help") => {
-            print!("{HELP}");
+            out!("{HELP}");
             ExitCode::SUCCESS
         }
         Some("export") => export(&args[1..]),
@@ -70,7 +72,7 @@ fn export_file(input: &str, output: &str, pair: usize) -> Result<(), CliError> {
         text.push_str(&format!("{}\t{}\n", format_ref(index), escape(line)));
     }
     fs::write(output, text).map_err(|e| CliError::Message(format!("{output}: {e}")))?;
-    println!("exported {} lines of pair {pair} to {output}", chosen.len());
+    outln!("exported {} lines of pair {pair} to {output}", chosen.len());
     Ok(())
 }
 

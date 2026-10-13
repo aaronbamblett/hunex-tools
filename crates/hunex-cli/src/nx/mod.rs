@@ -28,7 +28,7 @@ pub fn run(args: &[String]) -> ExitCode {
     match args.first().map(String::as_str) {
         None => usage(HELP),
         Some("help" | "-h" | "--help") => {
-            print!("{HELP}");
+            out!("{HELP}");
             ExitCode::SUCCESS
         }
         Some("info") => info(&args[1..]),
@@ -64,7 +64,7 @@ fn info_file(path: &str) -> Result<(), CliError> {
     let bytes = bntx_bytes(path)?;
     let container = Bntx::parse(&bytes).map_err(|e| CliError::Message(format!("{path}: {e}")))?;
     let count = container.textures.len();
-    println!(
+    outln!(
         "{} {}",
         count,
         if count == 1 { "texture" } else { "textures" }
@@ -74,7 +74,7 @@ fn info_file(path: &str) -> Result<(), CliError> {
             Ok(_) => "decodes".to_string(),
             Err(error) => error.to_string(),
         };
-        println!(
+        outln!(
             "{index:>3}  {:<16}  0x{:04x}  {:>5}x{:<5}  {:>9} bytes  {status}",
             texture.name.as_deref().unwrap_or("-"),
             texture.format,

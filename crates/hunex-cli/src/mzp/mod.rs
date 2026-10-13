@@ -8,8 +8,9 @@ use hunex_mzp::{parse, write};
 
 use crate::cli::{finish, parse as parse_args, usage, CliError};
 
+/// Help text for the `mzp` (MZP containers) command.
 pub const HELP: &str = "\
-hunex mzp: MZP containers (image archives)
+hunex mzp: MZP containers (background images)
 
 Usage:
   hunex mzp list <file.mzp>
@@ -22,11 +23,12 @@ const LIST_USAGE: &str = "usage: hunex mzp list <file.mzp>\n";
 const UNPACK_USAGE: &str = "usage: hunex mzp unpack <file.mzp> -o <dir>\n";
 const PACK_USAGE: &str = "usage: hunex mzp pack <dir> -o <file.mzp>\n";
 
+/// Runs the command with the arguments that follow its name. Returns the exit code.
 pub fn run(args: &[String]) -> ExitCode {
     match args.first().map(String::as_str) {
         None => usage(HELP),
         Some("help" | "-h" | "--help") => {
-            print!("{HELP}");
+            out!("{HELP}");
             ExitCode::SUCCESS
         }
         Some("list") => list(&args[1..]),
@@ -78,7 +80,7 @@ fn unpack_file(path: &str, dir: &str) -> Result<(), CliError> {
         let target = Path::new(dir).join(format!("entry-{index:03}.bin"));
         fs::write(&target, entry).map_err(|e| message(&target.display().to_string(), e))?;
     }
-    println!("unpacked {} entries to {dir}", container.entries.len());
+    outln!("unpacked {} entries to {dir}", container.entries.len());
     Ok(())
 }
 
@@ -107,7 +109,7 @@ fn pack_dir(dir: &str, output: &str) -> Result<(), CliError> {
     let refs: Vec<&[u8]> = entries.iter().map(Vec::as_slice).collect();
     let packed = write(&refs).map_err(|e| message(output, e))?;
     fs::write(output, packed).map_err(|e| message(output, e))?;
-    println!("packed {} entries into {output}", entries.len());
+    outln!("packed {} entries into {output}", entries.len());
     Ok(())
 }
 

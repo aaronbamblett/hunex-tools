@@ -23,7 +23,7 @@ pub fn run(args: &[String]) -> ExitCode {
             "--strings" => Mode::Strings,
             "--asm" => Mode::Asm,
             "-h" | "--help" => {
-                print!("{USAGE}");
+                out!("{USAGE}");
                 return ExitCode::SUCCESS;
             }
             other if other.starts_with('-') || path.is_some() => return usage(USAGE),
