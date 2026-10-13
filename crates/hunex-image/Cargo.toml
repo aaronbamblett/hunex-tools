@@ -1,0 +1,15 @@
+[package]
+name = "hunex-image"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+repository.workspace = true
+rust-version.workspace = true
+description = "Background images of the HuneX engine: MZP image archives to RGBA canvases and back"
+keywords = ["hunex", "mzp", "image", "tiles"]
+categories = ["multimedia::images", "no-std"]
+readme = "README.md"
+
+[dependencies]
+hunex-mzp = { path = "../hunex-mzp", version = "0.1.0" }
+hunex-mzx = { path = "../hunex-mzx", version = "0.1.0" }

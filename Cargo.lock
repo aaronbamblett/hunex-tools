@@ -34,7 +34,23 @@ dependencies = [
 ]
 
 [[package]]
+name = "hunex-image"
+version = "0.1.0"
+dependencies = [
+ "hunex-mzp",
+ "hunex-mzx",
+]
+
+[[package]]
 name = "hunex-lenzu"
+version = "0.1.0"
+
+[[package]]
+name = "hunex-mzp"
+version = "0.1.0"
+
+[[package]]
+name = "hunex-mzx"
 version = "0.1.0"
 
 [[package]]

@@ -1,0 +1,13 @@
+[package]
+name = "hunex-mzp"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+repository.workspace = true
+rust-version.workspace = true
+description = "Container reader and writer for the MZP image archives of the HuneX engine"
+keywords = ["hunex", "mzp", "archive", "image"]
+categories = ["parser-implementations", "no-std"]
+readme = "README.md"
+
+[dependencies]

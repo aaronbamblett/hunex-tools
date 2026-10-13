@@ -1,0 +1,13 @@
+[package]
+name = "hunex-mzx"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+repository.workspace = true
+rust-version.workspace = true
+description = "MZX0 compressed streams of the HuneX engine image tiles: decoder and greedy encoder"
+keywords = ["hunex", "mzx", "compression", "image"]
+categories = ["compression", "no-std"]
+readme = "README.md"
+
+[dependencies]
