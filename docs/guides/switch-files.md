@@ -1,6 +1,6 @@
 # Reading Switch archives
 
-The Switch release stores its files in the RomFS, its read-only file system. Its archives are sets of three files that share a base name, plus NXX-wrapped textures, MZP containers and a compiled script archive. This guide reads them. The Switch formats in this repository are read-only. The commands here list, unpack, decode and export. They do not write Switch archives.
+The Switch release stores its files in the RomFS, its read-only file system. Its archives are sets of three files that share a base name, plus NXX-wrapped textures, MZP containers and a compiled script archive. This guide reads them, and it ends with the commands that write the script, script text and audio containers back.
 
 The sets are named in the [Switch archive format note](../formats/switch-archives.md#game-sets). Set A is the Switch release of Tsukihime -A piece of blue glass moon-, and set B is the Switch release of Witch on the Holy Night.
 
@@ -114,10 +114,64 @@ dumped 549 scripts to work/switch/scripts/dumped
 
 The folder holds `scr0000.txt` to `scr0548.txt`, and `nam.bin`, the script name table.
 
+## Switch editing
+
+The writers rebuild the three Switch containers from their parts. The commands below edit one script, one line of script text, and one Nintendo OPUS clip. They need the GNU `sed` command, as in [Getting started](getting-started.md).
+
+Edit one script. Dump the scripts, change one file, and pack the archive with `--base`. The packer copies every unchanged stream from the original, and encodes only the changed script:
+
+```sh
+mkdir -p work/switch/edit
+cp "<RomFS folder>/allscr.mrg" work/switch/edit/
+hunex switch-script dump work/switch/edit/allscr.mrg -o work/switch/edit/scripts
+printf '\n' >> work/switch/edit/scripts/scr0100.txt
+hunex switch-script pack work/switch/edit/scripts -o work/switch/edit/allscr-edited.mrg --base work/switch/edit/allscr.mrg
+```
+
+Output:
+
+```text
+packed 552 entries into work/switch/edit/allscr-edited.mrg: 548 unchanged, 1 encoded
+```
+
+Edit one line of script text. Export one pair, change one line, and import the file back with `--base`. The file must keep the same ids and line count:
+
+```sh
+cp "<RomFS folder>/script_text.mrg" work/switch/edit/
+hunex switch-text export work/switch/edit/script_text.mrg -o work/switch/edit/lines.txt --pair 1
+sed -i '2s/.*/$000001\tEDITED LINE FOR THE GUIDE/' work/switch/edit/lines.txt
+hunex switch-text import work/switch/edit/lines.txt -o work/switch/edit/script_text-edited.mrg --base work/switch/edit/script_text.mrg --pair 1
+```
+
+Output:
+
+```text
+imported 43969 lines into pair 1 of work/switch/edit/script_text-edited.mrg
+```
+
+Convert a Nintendo OPUS clip. `to-ogg` writes the packets to Ogg Opus, and it stores the packet fields in a comment. `from-ogg` writes the same Nintendo file back:
+
+```sh
+mkdir -p work/switch/stream
+cp "<RomFS folder>/stream/A00_01_00_0000_0.opus" work/switch/stream/
+hunex nopus to-ogg work/switch/stream/A00_01_00_0000_0.opus -o work/switch/stream/clip.ogg
+hunex nopus from-ogg work/switch/stream/clip.ogg -o work/switch/stream/clip-back.opus
+cmp work/switch/stream/clip-back.opus work/switch/stream/A00_01_00_0000_0.opus && echo "clip round trip identical"
+```
+
+Output:
+
+```text
+wrote work/switch/stream/clip-back.opus: 65709 bytes
+clip round trip identical
+```
+
+Checked on sample files: each command above reproduces the original where the original is unchanged. Open: the game has not loaded any file written this way.
+
 ## Check the decoding
 
 The decoded scripts match script dumps made with an independent tool, deepLuna, which is licensed under BSD-2. The `HUNEX_SWITCH_DUMP_A` and `HUNEX_SWITCH_DUMP_B` gated tests check them. See [CONTRIBUTING](../../CONTRIBUTING.md).
 
-Verified in game: not applicable. The Switch formats are read-only in this project.
+Open: the game has not loaded any file that these commands write.
 
 Format details: [Switch archive format note](../formats/switch-archives.md).

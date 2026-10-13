@@ -355,6 +355,18 @@ Usage: `hunex nopus to-ogg <in.opus> -o <out.ogg>`
 
 Example: `hunex nopus to-ogg clip.opus -o clip.ogg`
 
+### nopus from-ogg
+
+Converts an Ogg Opus file back to a Nintendo OPUS file. The packets are copied unchanged. The packet fields come from the comment that `nopus to-ogg` writes. A file without that comment gets zero fields, and the command says so.
+
+Usage: `hunex nopus from-ogg <in.ogg> -o <out.opus>`
+
+| Option | Purpose |
+|---|---|
+| `-o <out.opus>` | The Nintendo OPUS file to write. Required. |
+
+Example: `hunex nopus from-ogg work/audio/clip.ogg -o work/audio/clip.opus`
+
 ### nopus help
 
 Usage: `hunex nopus help`
@@ -542,6 +554,20 @@ Usage: `hunex switch-text export <script_text.mrg> -o <lines.txt> [--pair N]`
 
 Example: `hunex switch-text export script_text.mrg -o lines.txt --pair 1`
 
+### switch-text import
+
+Rebuilds `script_text.mrg` from a file written by `switch-text export`. The file replaces one language pair. The other pairs are copied from the original. The file must keep the ids in order and the same number of lines as the pair.
+
+Usage: `hunex switch-text import <lines.txt> -o <script_text.mrg> --base <original.mrg> [--pair N]`
+
+| Option | Purpose |
+|---|---|
+| `-o <script_text.mrg>` | The container to write. Required. |
+| `--base <original.mrg>` | The original container. Required. |
+| `--pair N` | The language pair to replace, 0 to 4. The default is 1. |
+
+Example: `hunex switch-text import work/switch/text/lines.txt -o work/switch/text/script_text-edited.mrg --base work/switch/text/script_text.mrg --pair 1`
+
 ### switch-text help
 
 Usage: `hunex switch-text help`
@@ -563,6 +589,19 @@ Usage: `hunex switch-script dump <allscr.mrg> -o <dir>`
 | `-o <dir>` | The folder to write. Required. |
 
 Example: `hunex switch-script dump allscr.mrg -o scripts`
+
+### switch-script pack
+
+Rebuilds `allscr.mrg` from a folder of script files written by `switch-script dump`. A file whose text matches the original script keeps the original stream byte for byte. A changed file is encoded again. Entries 1 and 2 and the name table come from the original, unless the folder has a `nam.bin`.
+
+Usage: `hunex switch-script pack <dir> -o <allscr.mrg> --base <original.mrg>`
+
+| Option | Purpose |
+|---|---|
+| `-o <allscr.mrg>` | The archive to write. Required. |
+| `--base <original.mrg>` | The original archive. Required. Unchanged entries are copied from it. |
+
+Example: `hunex switch-script pack work/switch/scripts/dumped -o work/switch/allscr-edited.mrg --base work/switch/scripts/allscr.mrg`
 
 ### switch-script help
 

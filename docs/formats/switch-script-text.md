@@ -25,10 +25,14 @@ Line `i` is the bytes from slot `i`'s start to slot `i + 1`'s start. Each line e
 - A script refers to a line with `$` and exactly six decimal digits. The number is the zero-based line index in the pair the engine loads. The crate's `ref_index` and `format_ref` convert between the two forms.
 - `hunex switch-text export` writes one line per index, `$000000` then a TAB, then the text. Backslash, tab, CR and LF are written as `\\`, `\t`, `\r` and `\n`, as in the `.ctd` export format.
 
+- Writing: `switch-text import` replaces one pair. The table has one start per line, then the text length, then `0xFFFFFFFF`, all big-endian. Each line is written with CR LF after it. The import keeps the line count of the pair, because the ids are shared positions.
+- Checked on sample files: exporting the Tsukihime English pair and importing it into the original container reproduces `script_text.mrg` byte for byte. An edited line survives a second export, and no other line changes (`switch_text_import` gated test). The Mahoyo text is not in the samples, so only the Tsukihime container is checked.
+
 ## What the game accepts
 
-Not applicable in game: this format is read-only in this project.
+Open: the game has not loaded a rebuilt `script_text.mrg`.
 
 ## Known unknowns
 
 - Which pair the engine loads, and which pair is used for a given id when more than one language is present, is not established.
+- Open: whether the game accepts a line of a different length in this container.

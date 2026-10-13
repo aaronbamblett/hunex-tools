@@ -38,10 +38,11 @@ Each row links to its format note, which gives the details and the open question
 | [Glyph tables and font atlases (`.ccit`)](docs/formats/ccit-format.md) | `hunex-ccit` | Yes | Yes | Verified in game: an edited atlas glyph displays and accented glyphs render. Open: edited glyph tables. |
 | [Audio (`.hw`, Ogg Vorbis)](docs/formats/hw-format.md) | `hunex-hw` | Yes | Yes | Verified in game: a converted Switch voice clip plays in place of a stock sound. |
 | [CompressedBG images (`.cbg`)](docs/formats/cbg-format.md) | `hunex-cbg` | Yes | Yes | Verified in game: a repainted title logo displays, alpha included. |
-| [Nintendo OPUS audio (Switch)](docs/formats/nintendo-opus-format.md) | `hunex-nopus` | Yes | Ogg Opus remux | Verified in game indirectly, through the `.hw` test. |
-| [Switch archive sets](docs/formats/switch-archives.md) | `hunex-mrg` | Yes | No | Checked on sample files. Not applicable in game. |
+| [Nintendo OPUS audio (Switch)](docs/formats/nintendo-opus-format.md) | `hunex-nopus` | Yes | Yes, and Ogg Opus remux | Checked on sample files: 507 files round-trip byte for byte. Verified in game indirectly, through the `.hw` test. Open: a rebuilt Nintendo OPUS file in game. |
+| [Switch archive sets](docs/formats/switch-archives.md) | `hunex-mrg` | Yes | Yes | Checked on sample files: the seven RomFS sets and one set of game set B rebuild byte for byte. Open: in game. |
+| [Switch scripts (`allscr.mrg`)](docs/formats/switch-archives.md) | `hunex-mzx`, `hunex-mzp` | Yes | Yes | Checked on sample files: dump, then pack, is byte-identical, and an edited script changes one entry. Open: in game. |
 | [Switch textures (NXX, BNTX)](docs/formats/switch-textures.md) | `hunex-nx` | Yes, decode only | No | Checked on sample files. Not applicable in game. |
-| [Switch script text](docs/formats/switch-script-text.md) | `hunex-switch-text` | Yes | No | Checked on sample files. Not applicable in game. |
+| [Switch script text](docs/formats/switch-script-text.md) | `hunex-switch-text` | Yes | Yes | Checked on sample files: the Tsukihime container round-trips byte for byte. Open: in game. |
 
 ## Install
 

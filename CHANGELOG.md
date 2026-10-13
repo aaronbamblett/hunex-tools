@@ -12,6 +12,7 @@ First release. It contains:
 - hunex-ogg: Ogg page reader and writer with CRC checks.
 - hunex-hw: reader and writer for `.hw` audio (64-byte header and Ogg Vorbis payload).
 - hunex-nopus: reader for Nintendo OPUS audio, and a remux to Ogg Opus (RFC 7845) that copies the packets unchanged.
+- Switch writers: the MRG set writer (index, names and layout), the Switch MZX0 encoder, the `allscr.mrg` writer (`switch-script pack`), the script text writer (`switch-text import`), and the Nintendo OPUS writer (`nopus from-ogg`). Each one is checked on the sample files.
 - hunex-mzx: MZX0 decoder and encoder for the PC and Switch variants. The PC decoder resets its repeat value at each 4096-word window; the encoder writes literals and back-references only.
 - hunex-mzp: MZP container reader and writer, with the PC and Switch size rules and 0xFF padding.
 - hunex-image: background images. HEP palette tiles abut at full size into an RGBA canvas, and encode back to MZP. `from-png --like` keeps unchanged tiles byte for byte and re-encodes changed ones. Font atlases (bitmap type 0x01) use a swizzled palette order.

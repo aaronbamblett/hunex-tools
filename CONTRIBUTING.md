@@ -60,10 +60,11 @@ HUNEX_CHS_DIR=/path/to/chs HUNEX_WORK=/var/tmp/hunex-work cargo test -p hunex-ch
 | `HUNEX_NOPUS_DIR` | The Switch `stream` folder of Nintendo OPUS files. | `hunex-cli` `audio_real` | Skipped with a message. |
 | `HUNEX_NOPUS_SURVEY` | Set to `1` to add a survey of every file in `HUNEX_NOPUS_DIR`. | `hunex-cli` `audio_real` | No survey. |
 | `HUNEX_FFMPEG` | Set to `1` to decode the remuxed Ogg files with `ffmpeg`, which must be on `PATH`. | `hunex-cli` `audio_real` | Decode step is skipped. |
-| `HUNEX_SWITCH_ROMFS_A` | The Switch RomFS folder of game set A. | `hunex-cli` `switch_real` | Skipped with a message. |
+| `HUNEX_SWITCH_ROMFS_A` | The Switch RomFS folder of game set A. | `hunex-cli` `switch_real`, `switch_mrg_write`, `switch_mzx_envelope`, `switch_pack`, `switch_text_import`, `nopus_roundtrip` | Skipped with a message. |
 | `HUNEX_SWITCH_ROMFS_B` | The Switch RomFS folder of game set B. | `hunex-cli` `switch_real` | Skipped with a message. |
 | `HUNEX_SWITCH_DUMP_A` | A folder of decompressed script dumps for game set A. | `hunex-cli` `switch_real` | Skipped with a message. |
-| `HUNEX_SWITCH_DUMP_B` | A folder of decompressed script dumps for game set B. | `hunex-cli` `switch_real` | Skipped with a message. |
+| `HUNEX_SWITCH_DUMP_B` | A folder of decompressed script dumps for game set B. | `hunex-cli` `switch_real`, `switch_mzx_envelope` | Skipped with a message. |
+| `HUNEX_SWITCH_SET_B` | A folder with the set B Switch sets (`jallpac.hed`, `.mrg`, `.nam`). | `hunex-cli` `switch_mrg_write` | Skipped with a message. |
 | `HUNEX_BC3_DIR` | A folder of MRG sets, scanned for BC3 textures. | `hunex-cli` `bc3_scan` | Skipped with a message. |
 | `HUNEX_WORK` | A scratch folder for test output. Use a folder under `/var/tmp`. | `hunex-cli` `hfa_real`, `font_real`, `audio_real`, `ctd_real`, `switch_real`, `bc3_scan` | Checks that write output are skipped with a message. |
 | `HUNEX_UPDATE_DOCS` | Set to `1` to rewrite `docs/formats/opcodes.md` from the opcode table. | `hunex-chs` `opcodes_doc` | The test fails if the file is out of date. |

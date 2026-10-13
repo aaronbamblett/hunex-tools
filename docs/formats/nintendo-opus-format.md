@@ -51,13 +51,27 @@ Every page has a CRC-32 (polynomial 0x04C11DB7, no reflection, initial value 0, 
 
 Only mono and stereo are accepted. Layouts this crate does not understand are reported as unsupported.
 
+### Writing a Nintendo OPUS file
+
+`hunex nopus from-ogg` writes the file from an Ogg Opus stream. Every value in the header is fixed in the sample files, and the writer writes it: version 0, frame size 0, data offset 0x20, zero reserved fields, sample rate and pre-skip from the Ogg Opus header, context chunk 0, padding 0. The data chunk size counts the bytes after its own header. Each packet is its big-endian length, its 4-byte field, and its bytes.
+
+Checked on sample files: over 500 files, the structural fields have one value each, and the packets end exactly at the end of the file.
+
+### The packet fields
+
+The 4-byte field before each packet is not a checksum or a length of the packet. It is 1 in 21,408 of the 137,372 packets in 500 files, and it varies in the rest. Ogg Opus has no place for it, so `nopus to-ogg` stores the fields, little-endian and in hex, in an `OpusTags` comment named `HUNEX_NINTENDO_FIELDS`. The tags packet spans as many pages as the comment needs. `from-ogg` reads the comment back. An Ogg Opus file without the comment gets zero fields, and the command says so.
+
+Checked on sample files: `to-ogg` then `from-ogg` reproduces 507 files byte for byte: the three named samples and every 33rd file of the stream folder (`nopus_roundtrip` gated test). The Ogg output also decodes with `ffmpeg`.
+
 ## What the game accepts
 
-Verified indirectly (2026-10-13): a Nintendo OPUS clip, remuxed with `hunex nopus to-ogg` and converted to Vorbis, plays in the game through the `.hw` test. The Ogg Opus file itself was not played.
+Verified indirectly (2026-10-13): a Nintendo OPUS clip, remuxed with `hunex nopus to-ogg` and converted to Vorbis, plays in the game through the `.hw` test. The Ogg Opus file itself was not played. Open: whether the game accepts a Nintendo OPUS file written by `from-ogg`.
 
 ## Known unknowns
 
-- The meaning of the 4-byte field before each packet, and of header field 0x14.
+- The meaning of the 4-byte field before each packet. It may be the encoder's final range, which would need a full decode of each packet to check. The field is carried in the Ogg comment until its meaning is known.
+- Whether the game reads the 4-byte field at all. The reader in this crate ignores it.
+- The meaning of header field 0x14. It is zero in every sample.
 - The layout of a context (loop) chunk. No sample has one.
 - Open: whether the decoded audio matches another decoder's output bit for bit. Only ffmpeg was used.
 - Channel counts above two, and other mapping families.
