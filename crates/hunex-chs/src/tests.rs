@@ -9,6 +9,16 @@ fn put(out: &mut Vec<u8>, value: u32) {
 }
 
 fn build(magic: &[u8], includes: &[&[u8]], code: &[u32], pool: &[u8]) -> Vec<u8> {
+    build_with_fill(magic, includes, 0, code, pool)
+}
+
+fn build_with_fill(
+    magic: &[u8],
+    includes: &[&[u8]],
+    fill: u8,
+    code: &[u32],
+    pool: &[u8],
+) -> Vec<u8> {
     let mut out = magic.to_vec();
     put(&mut out, (CODE_BASE - magic.len()) as u32);
     put(&mut out, includes.len() as u32);
@@ -17,7 +27,7 @@ fn build(magic: &[u8], includes: &[&[u8]], code: &[u32], pool: &[u8]) -> Vec<u8>
         out.push(0);
     }
     assert!(out.len() <= CODE_BASE, "test header too long");
-    out.resize(CODE_BASE, 0);
+    out.resize(CODE_BASE, fill);
     for &word in code {
         put(&mut out, word);
     }
@@ -31,6 +41,45 @@ fn hunex(code: &[u32], pool: &[u8]) -> Vec<u8> {
 
 fn set_dword(bytes: &mut [u8], offset: usize, value: u32) {
     bytes[offset..offset + 4].copy_from_slice(&value.to_le_bytes());
+}
+
+fn assert_round_trip(bytes: &[u8]) {
+    let script = Script::parse(bytes).unwrap();
+    assert_eq!(script.encode(), bytes);
+}
+
+#[test]
+fn round_trip_minimal_hunex() {
+    assert_round_trip(&hunex(&[0x00, 5, 0x03, 0x14, 0x1B], b"hi\0"));
+}
+
+#[test]
+fn round_trip_buriko() {
+    assert_round_trip(&build(
+        BURIKO_MAGIC,
+        &[],
+        &[0x00, 5, 0x03, 0x14, 0x1B],
+        b"hi\0",
+    ));
+}
+
+#[test]
+fn round_trip_with_includes() {
+    assert_round_trip(&build(
+        HUNEX_MAGIC,
+        &[b"ab", b"c"],
+        &[0x7B, MARKER, 1, 2, 0x1B],
+        b"",
+    ));
+}
+
+#[test]
+fn round_trip_nonzero_header_padding() {
+    let bytes = build_with_fill(HUNEX_MAGIC, &[b"ab"], 0xA5, &[0x03, 0x0C, 0x1B], b"x\0");
+    let script = Script::parse(&bytes).unwrap();
+    assert_eq!(script.header_padding(), &[0xA5; 10][..]);
+    assert_eq!(script.pool_bytes(), b"x\0");
+    assert_eq!(script.encode(), bytes);
 }
 
 #[test]

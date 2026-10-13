@@ -1,6 +1,8 @@
-//! Decoder for HuneX compiled script (`.chs`) files.
+//! Decoder and exact re-encoder for HuneX compiled script (`.chs`) files.
 //!
-//! [`Script::parse`] copies its input and returns owned instructions and header facts.
+//! [`Script::parse`] returns owned instructions, header facts and the string pool.
+//! [`Script::encode`] rebuilds the file from those parts; for a parsed file it returns the
+//! original bytes exactly.
 //!
 //! Known limit: the code section has no explicit length. The string pool is taken to start
 //! at the smallest string pointer (code base plus pointer), and the walk must end on a return
@@ -36,6 +38,15 @@ pub enum Format {
     Buriko,
 }
 
+impl Format {
+    fn magic(self) -> &'static [u8] {
+        match self {
+            Format::Hunex => HUNEX_MAGIC,
+            Format::Buriko => BURIKO_MAGIC,
+        }
+    }
+}
+
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub struct Instruction {
     offset: usize,
@@ -68,9 +79,10 @@ pub struct Script {
     header_size: u32,
     code_base: usize,
     includes: Vec<Vec<u8>>,
+    header_padding: Vec<u8>,
     string_pool_start: usize,
     instructions: Vec<Instruction>,
-    data: Vec<u8>,
+    pool: Vec<u8>,
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -117,9 +129,8 @@ impl Script {
         } else {
             return Err(Error::BadMagic);
         };
-        let data = bytes.to_vec();
 
-        let header_size = read_u32(&data, magic.len())?;
+        let header_size = read_u32(bytes, magic.len())?;
         if (header_size as usize) < HEADER_FIELDS_SIZE {
             return Err(Error::BadHeader {
                 offset: magic.len(),
@@ -128,11 +139,13 @@ impl Script {
         let code_base = magic
             .len()
             .checked_add(header_size as usize)
-            .filter(|&base| base <= data.len())
-            .ok_or(Error::Truncated { offset: data.len() })?;
+            .filter(|&base| base <= bytes.len())
+            .ok_or(Error::Truncated {
+                offset: bytes.len(),
+            })?;
 
         let include_count_offset = magic.len() + 4;
-        let include_count = read_u32(&data, include_count_offset)?;
+        let include_count = read_u32(bytes, include_count_offset)?;
         let mut position = magic.len() + HEADER_FIELDS_SIZE;
         if include_count as usize > code_base - position {
             return Err(Error::BadHeader {
@@ -141,7 +154,7 @@ impl Script {
         }
         let mut includes = Vec::with_capacity(include_count as usize);
         for _ in 0..include_count {
-            let names = &data[position..code_base];
+            let names = &bytes[position..code_base];
             let length = names
                 .iter()
                 .position(|&byte| byte == 0)
@@ -149,16 +162,17 @@ impl Script {
             includes.push(names[..length].to_vec());
             position += length + 1;
         }
+        let header_padding = bytes[position..code_base].to_vec();
 
         let mut instructions = Vec::new();
         let mut position = code_base;
         let mut smallest_string: Option<(u32, usize)> = None;
         loop {
             let pool = smallest_string.map(|(value, _)| pool_start(code_base, value));
-            if pool.is_some_and(|pool| position >= pool) || position >= data.len() {
+            if pool.is_some_and(|pool| position >= pool) || position >= bytes.len() {
                 break;
             }
-            let instruction = decode_one(&data, position, pool)?;
+            let instruction = decode_one(bytes, position, pool)?;
             if is_string_opcode(instruction.opcode) {
                 let value = instruction.operands()[0];
                 if smallest_string.is_none_or(|(smallest, _)| value < smallest) {
@@ -172,12 +186,12 @@ impl Script {
         let pool = match smallest_string {
             Some((value, offset)) => {
                 let pool = pool_start(code_base, value);
-                if pool > data.len() {
+                if pool > bytes.len() {
                     return Err(Error::BadStringOperand { offset, value });
                 }
                 pool
             }
-            None => data.len(),
+            None => bytes.len(),
         };
         let last_offset = instructions.last().map_or(code_base, |last| last.offset);
         match instructions.last() {
@@ -189,10 +203,11 @@ impl Script {
             }
         }
 
+        let pool_bytes = bytes[pool..].to_vec();
         for instruction in &instructions {
             if is_string_opcode(instruction.opcode) {
                 let value = instruction.operands()[0];
-                if string_range(&data, pool, code_base, value).is_none() {
+                if string_range(&pool_bytes, pool, code_base, value).is_none() {
                     return Err(Error::BadStringOperand {
                         offset: instruction.offset,
                         value,
@@ -206,10 +221,32 @@ impl Script {
             header_size,
             code_base,
             includes,
+            header_padding,
             string_pool_start: pool,
             instructions,
-            data,
+            pool: pool_bytes,
         })
+    }
+
+    /// Rebuilds the file: magic, header, code instructions, then the string pool.
+    pub fn encode(&self) -> Vec<u8> {
+        let mut out = Vec::new();
+        out.extend_from_slice(self.format.magic());
+        push_u32(&mut out, self.header_size);
+        push_u32(&mut out, self.includes.len() as u32);
+        for name in &self.includes {
+            out.extend_from_slice(name);
+            out.push(0);
+        }
+        out.extend_from_slice(&self.header_padding);
+        for instruction in &self.instructions {
+            push_u32(&mut out, instruction.opcode);
+            for &operand in instruction.operands() {
+                push_u32(&mut out, operand);
+            }
+        }
+        out.extend_from_slice(&self.pool);
+        out
     }
 
     pub fn format(&self) -> Format {
@@ -228,8 +265,18 @@ impl Script {
         &self.includes
     }
 
+    /// Header bytes between the end of the include list and the code base (zero in real files).
+    pub fn header_padding(&self) -> &[u8] {
+        &self.header_padding
+    }
+
     pub fn string_pool_start(&self) -> usize {
         self.string_pool_start
+    }
+
+    /// The string pool: every byte from the pool start to the end of the file.
+    pub fn pool_bytes(&self) -> &[u8] {
+        &self.pool
     }
 
     pub fn instructions(&self) -> &[Instruction] {
@@ -252,8 +299,8 @@ impl Script {
             return Err(bad);
         }
         let range =
-            string_range(&self.data, self.string_pool_start, self.code_base, value).ok_or(bad)?;
-        Ok(&self.data[range])
+            string_range(&self.pool, self.string_pool_start, self.code_base, value).ok_or(bad)?;
+        Ok(&self.pool[range])
     }
 
     pub fn string(&self, instruction: &Instruction) -> Result<&str, Error> {
@@ -272,37 +319,49 @@ fn pool_start(code_base: usize, value: u32) -> usize {
     code_base.saturating_add(value as usize)
 }
 
-/// The bytes of the string a pointer names, if the pointer is a valid pool string start
-/// (inside the pool, preceded by NUL, and terminated by NUL before the end of the data).
-fn string_range(data: &[u8], pool: usize, code_base: usize, value: u32) -> Option<Range<usize>> {
-    let start = code_base.checked_add(value as usize)?;
-    if start < pool || start >= data.len() {
+/// Index range, within the pool bytes, of the string a pointer names. The pointer must land
+/// inside the pool and be a string start: the pool start (which follows the final return's
+/// zero byte) or a position preceded by NUL. The string must end with NUL before the pool does.
+fn string_range(
+    pool: &[u8],
+    pool_start: usize,
+    code_base: usize,
+    value: u32,
+) -> Option<Range<usize>> {
+    let start = code_base
+        .checked_add(value as usize)?
+        .checked_sub(pool_start)?;
+    if start >= pool.len() {
         return None;
     }
-    if start.checked_sub(1).and_then(|previous| data.get(previous)) != Some(&0) {
+    if start > 0 && pool[start - 1] != 0 {
         return None;
     }
-    let length = data[start..].iter().position(|&byte| byte == 0)?;
+    let length = pool[start..].iter().position(|&byte| byte == 0)?;
     Some(start..start + length)
 }
 
-fn read_u32(data: &[u8], position: usize) -> Result<u32, Error> {
+fn read_u32(bytes: &[u8], position: usize) -> Result<u32, Error> {
     let truncated = Error::Truncated { offset: position };
     let end = position.checked_add(4).ok_or(truncated)?;
-    match data.get(position..end) {
+    match bytes.get(position..end) {
         Some(&[a, b, c, d]) => Ok(u32::from_le_bytes([a, b, c, d])),
         _ => Err(truncated),
     }
 }
 
+fn push_u32(out: &mut Vec<u8>, value: u32) {
+    out.extend_from_slice(&value.to_le_bytes());
+}
+
 /// Decodes the instruction at `position`. When the pool start is known, the instruction must
 /// lie entirely before it; its bytes are not read otherwise.
-fn decode_one(data: &[u8], position: usize, pool: Option<usize>) -> Result<Instruction, Error> {
+fn decode_one(bytes: &[u8], position: usize, pool: Option<usize>) -> Result<Instruction, Error> {
     let boundary = Error::PoolBoundary { offset: position };
     if pool.is_some_and(|pool| position + 4 > pool) {
         return Err(boundary);
     }
-    let opcode = read_u32(data, position)?;
+    let opcode = read_u32(bytes, position)?;
     let info = opcode_info(opcode).ok_or(Error::UnregisteredOpcode {
         offset: position,
         opcode,
@@ -313,7 +372,7 @@ fn decode_one(data: &[u8], position: usize, pool: Option<usize>) -> Result<Instr
     }
     let mut operands = [0; MAX_OPERANDS];
     for (index, operand) in operands.iter_mut().enumerate().take(info.operands) {
-        *operand = read_u32(data, position + 4 + 4 * index)?;
+        *operand = read_u32(bytes, position + 4 + 4 * index)?;
     }
     Ok(Instruction {
         offset: position,

@@ -4,7 +4,7 @@ use std::process::ExitCode;
 
 use hunex_chs::{opcode_info, Error, Instruction, Script};
 
-const USAGE: &str = "usage: chs-dump [--strings] <file.chs>";
+const USAGE: &str = "usage: chs-dump [--strings | --roundtrip] <file.chs>";
 
 enum CliError {
     Io(io::Error),
@@ -25,10 +25,12 @@ impl From<Error> for CliError {
 
 fn main() -> ExitCode {
     let mut strings_only = false;
+    let mut roundtrip = false;
     let mut path = None;
     for argument in std::env::args().skip(1) {
         match argument.as_str() {
             "--strings" => strings_only = true,
+            "--roundtrip" => roundtrip = true,
             "-h" | "--help" => {
                 println!("{USAGE}");
                 return ExitCode::SUCCESS;
@@ -60,6 +62,10 @@ fn main() -> ExitCode {
             return ExitCode::FAILURE;
         }
     };
+
+    if roundtrip {
+        return check_roundtrip(&path, &bytes, &script);
+    }
 
     let stdout = io::stdout();
     let mut out = BufWriter::new(stdout.lock());
@@ -133,4 +139,24 @@ fn escape(text: &str) -> String {
         }
     }
     out
+}
+
+fn check_roundtrip(path: &str, bytes: &[u8], script: &Script) -> ExitCode {
+    let encoded = script.encode();
+    if encoded == bytes {
+        println!("identical");
+        return ExitCode::SUCCESS;
+    }
+    let offset = encoded
+        .iter()
+        .zip(bytes)
+        .position(|(a, b)| a != b)
+        .unwrap_or(encoded.len().min(bytes.len()));
+    println!(
+        "differs at 0x{offset:x} (original {} bytes, re-encoded {} bytes)",
+        bytes.len(),
+        encoded.len()
+    );
+    eprintln!("chs-dump: {path}: round-trip mismatch");
+    ExitCode::FAILURE
 }

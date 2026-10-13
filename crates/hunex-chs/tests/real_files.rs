@@ -158,3 +158,34 @@ fn main_sample_text_ids_and_images() {
     assert_eq!(ids.len(), 80);
     assert_eq!(&images[..4], ["img0408", "img1227", "img2376", "img2326"]);
 }
+
+#[test]
+fn real_files_round_trip_byte_for_byte() {
+    let Some(files) = chs_files() else {
+        return;
+    };
+    let mut identical = 0usize;
+    let mut first_difference: Option<(String, usize)> = None;
+    for path in &files {
+        let bytes =
+            std::fs::read(path).unwrap_or_else(|error| panic!("{}: {error}", path.display()));
+        let encoded = Script::parse(&bytes)
+            .unwrap_or_else(|error| panic!("{}: {error}", path.display()))
+            .encode();
+        if encoded == bytes {
+            identical += 1;
+        } else if first_difference.is_none() {
+            let offset = encoded
+                .iter()
+                .zip(&bytes)
+                .position(|(a, b)| a != b)
+                .unwrap_or(encoded.len().min(bytes.len()));
+            first_difference = Some((path.display().to_string(), offset));
+        }
+    }
+    println!("round-trip: {identical} of {} files identical", files.len());
+    if let Some((name, offset)) = first_difference {
+        panic!("{name}: re-encode differs first at offset 0x{offset:x}");
+    }
+    assert_eq!(identical, 250);
+}

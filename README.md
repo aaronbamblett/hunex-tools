@@ -27,6 +27,8 @@ cargo run -p hunex-chs-cli -- path/to/script.chs
 cargo run -p hunex-chs-cli -- --strings path/to/script.chs
 ```
 
+`--roundtrip` re-encodes the parsed script and prints `identical`, or the first differing offset and exits non-zero.
+
 Each instruction prints as offset, opcode id, mnemonic (where known), and operands. Opcodes 0x03 and 0x7F also print their resolved string. `--strings` prints only the resolved strings, in code order.
 
 ## Known limit
