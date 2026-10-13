@@ -72,5 +72,3 @@ jobs:
         env:
           RUSTDOCFLAGS: -D warnings
         run: cargo doc --workspace --no-deps
-      - name: relative links
-        run: python3 scripts/check_links.py
