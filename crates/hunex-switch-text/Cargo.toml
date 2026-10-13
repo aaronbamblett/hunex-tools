@@ -1,0 +1,13 @@
+[package]
+name = "hunex-switch-text"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+repository.workspace = true
+rust-version.workspace = true
+description = "Script text of the HuneX Switch RomFS: offset tables and $ line lookup"
+keywords = ["hunex", "text", "switch", "script"]
+categories = ["parser-implementations", "no-std"]
+readme = "README.md"
+
+[dependencies]

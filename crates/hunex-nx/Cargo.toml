@@ -1,0 +1,15 @@
+[package]
+name = "hunex-nx"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+repository.workspace = true
+rust-version.workspace = true
+description = "Switch textures of the HuneX engine: NXX wrappers, BNTX containers, block-linear layout and BC4, BC7 and RGBA8 decoding"
+keywords = ["hunex", "bntx", "texture", "switch"]
+categories = ["multimedia::images", "no-std"]
+readme = "README.md"
+
+[dependencies]
+bcdec_rs = { version = "0.2.0", default-features = false }
+miniz_oxide = { version = "0.9.1", default-features = false, features = ["with-alloc"] }

@@ -1,0 +1,13 @@
+[package]
+name = "hunex-mrg"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+repository.workspace = true
+rust-version.workspace = true
+description = "Reader for the MRG archive sets (HED index, MRG data, NAM names) of the HuneX Switch RomFS"
+keywords = ["hunex", "mrg", "archive", "switch"]
+categories = ["parser-implementations", "no-std"]
+readme = "README.md"
+
+[dependencies]
