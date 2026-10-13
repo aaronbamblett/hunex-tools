@@ -47,7 +47,7 @@ jobs:
           New-Item -ItemType Directory -Path $staging | Out-Null
           Copy-Item "target/${{ matrix.target }}/release/${{ matrix.binary }}", "README.md", "LICENSE", "THIRD_PARTY_LICENSES.md" -Destination $staging
           Compress-Archive -Path $staging -DestinationPath "$staging.zip"
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v7
         with:
           name: hunex-${{ matrix.target }}
           path: hunex-*.zip
@@ -60,14 +60,26 @@ jobs:
     permissions:
       contents: write
     steps:
-      - uses: actions/download-artifact@v4
+      - uses: actions/checkout@v4
+      - uses: actions/download-artifact@v8
         with:
           path: dist
           merge-multiple: true
       - name: checksums
         working-directory: dist
         run: sha256sum hunex-*.zip > SHA256SUMS
+      - name: release notes from the CHANGELOG section
+        run: |
+          version="${GITHUB_REF_NAME#v}"
+          awk -v version="$version" '
+            /^## / { if (found) exit; if ($2 == version) { found = 1; next } }
+            found { print }
+          ' CHANGELOG.md > notes.md
+          if [ ! -s notes.md ]; then
+            echo "CHANGELOG.md has no section for $version" >&2
+            exit 1
+          fi
       - name: create release
         env:
           GH_TOKEN: ${{ github.token }}
-        run: gh release create "$GITHUB_REF_NAME" dist/hunex-*.zip dist/SHA256SUMS --title "hunex $GITHUB_REF_NAME" --generated-notes
+        run: gh release create "$GITHUB_REF_NAME" dist/hunex-*.zip dist/SHA256SUMS --verify-tag --title "hunex $GITHUB_REF_NAME" --notes-file notes.md
