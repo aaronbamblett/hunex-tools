@@ -1,6 +1,12 @@
 //! Decoder for HuneX compiled script (`.chs`) files.
 //!
-//! The input is copied, so a parsed [`Script`] owns its data.
+//! [`Script::parse`] copies its input and returns owned instructions and header facts.
+//!
+//! Known limit: the code section has no explicit length. The string pool is taken to start
+//! at the smallest string pointer (code base plus pointer), and the walk must end on a return
+//! exactly there. A crafted file whose smallest pointer targets a return in the middle of the
+//! code is accepted, and the code after that return is treated as pool. Real files cannot be
+//! told apart from that case, and the exe has no explicit code length either.
 
 #![no_std]
 
@@ -14,12 +20,15 @@ pub use opcodes::{opcode_info, OpcodeInfo, OPCODES};
 
 use alloc::vec::Vec;
 use core::fmt;
+use core::ops::Range;
 
 const HUNEX_MAGIC: &[u8] = b"HunexCompiledScriptVer1.00\0";
 const BURIKO_MAGIC: &[u8] = b"BurikoCompiledScriptVer1.00\0";
 const OP_PUSH_STRING: u32 = 0x03;
 const OP_RETURN: u32 = 0x1B;
 const OP_DEBUG: u32 = 0x7F;
+const MAX_OPERANDS: usize = 3;
+const HEADER_FIELDS_SIZE: usize = 8;
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum Format {
@@ -27,27 +36,40 @@ pub enum Format {
     Buriko,
 }
 
-#[derive(Debug, Clone, PartialEq, Eq)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub struct Instruction {
-    pub offset: usize,
-    pub opcode: u32,
-    pub operands: Vec<u32>,
+    offset: usize,
+    opcode: u32,
+    operands: [u32; MAX_OPERANDS],
+    operand_count: u8,
 }
 
 impl Instruction {
+    pub fn offset(&self) -> usize {
+        self.offset
+    }
+
+    pub fn opcode(&self) -> u32 {
+        self.opcode
+    }
+
+    pub fn operands(&self) -> &[u32] {
+        &self.operands[..usize::from(self.operand_count)]
+    }
+
     pub fn size(&self) -> usize {
-        4 * (1 + self.operands.len())
+        4 * (1 + usize::from(self.operand_count))
     }
 }
 
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct Script {
-    pub format: Format,
-    pub header_size: u32,
-    pub code_base: usize,
-    pub includes: Vec<Vec<u8>>,
-    pub string_pool_start: usize,
-    pub instructions: Vec<Instruction>,
+    format: Format,
+    header_size: u32,
+    code_base: usize,
+    includes: Vec<Vec<u8>>,
+    string_pool_start: usize,
+    instructions: Vec<Instruction>,
     data: Vec<u8>,
 }
 
@@ -55,6 +77,7 @@ pub struct Script {
 pub enum Error {
     BadMagic,
     Truncated { offset: usize },
+    BadHeader { offset: usize },
     UnregisteredOpcode { offset: usize, opcode: u32 },
     PoolBoundary { offset: usize },
     BadStringOperand { offset: usize, value: u32 },
@@ -66,6 +89,7 @@ impl fmt::Display for Error {
         match *self {
             Error::BadMagic => write!(f, "not a HuneX or Buriko compiled script"),
             Error::Truncated { offset } => write!(f, "file truncated at 0x{offset:x}"),
+            Error::BadHeader { offset } => write!(f, "malformed header at 0x{offset:x}"),
             Error::UnregisteredOpcode { offset, opcode } => {
                 write!(f, "unregistered opcode 0x{opcode:x} at 0x{offset:x}")
             }
@@ -96,79 +120,84 @@ impl Script {
         let data = bytes.to_vec();
 
         let header_size = read_u32(&data, magic.len())?;
+        if (header_size as usize) < HEADER_FIELDS_SIZE {
+            return Err(Error::BadHeader {
+                offset: magic.len(),
+            });
+        }
         let code_base = magic
             .len()
             .checked_add(header_size as usize)
             .filter(|&base| base <= data.len())
             .ok_or(Error::Truncated { offset: data.len() })?;
 
-        let include_count = read_u32(&data, magic.len() + 4)?;
-        let mut position = magic.len() + 8;
-        let mut includes = Vec::new();
+        let include_count_offset = magic.len() + 4;
+        let include_count = read_u32(&data, include_count_offset)?;
+        let mut position = magic.len() + HEADER_FIELDS_SIZE;
+        if include_count as usize > code_base - position {
+            return Err(Error::BadHeader {
+                offset: include_count_offset,
+            });
+        }
+        let mut includes = Vec::with_capacity(include_count as usize);
         for _ in 0..include_count {
-            let rest = &data[position..];
-            let length = rest
+            let names = &data[position..code_base];
+            let length = names
                 .iter()
                 .position(|&byte| byte == 0)
-                .ok_or(Error::Truncated { offset: data.len() })?;
-            includes.push(rest[..length].to_vec());
+                .ok_or(Error::BadHeader { offset: position })?;
+            includes.push(names[..length].to_vec());
             position += length + 1;
         }
 
-        let (greedy, end, stop) = decode_all(&data, code_base);
-        let first_string = greedy
-            .iter()
-            .filter(|instruction| is_string_opcode(instruction.opcode))
-            .filter_map(|instruction| {
-                instruction
-                    .operands
-                    .first()
-                    .map(|&v| (v, instruction.offset))
-            })
-            .min();
-
-        let pool = match (first_string, stop) {
-            (Some((value, offset)), _) => {
-                match code_base
-                    .checked_add(value as usize)
-                    .filter(|&pool| pool <= end)
-                {
-                    Some(pool) => pool,
-                    None => match stop {
-                        Some(error) => return Err(error),
-                        None => return Err(Error::BadStringOperand { offset, value }),
-                    },
+        let mut instructions = Vec::new();
+        let mut position = code_base;
+        let mut smallest_string: Option<(u32, usize)> = None;
+        loop {
+            let pool = smallest_string.map(|(value, _)| pool_start(code_base, value));
+            if pool.is_some_and(|pool| position >= pool) || position >= data.len() {
+                break;
+            }
+            let instruction = decode_one(&data, position, pool)?;
+            if is_string_opcode(instruction.opcode) {
+                let value = instruction.operands()[0];
+                if smallest_string.is_none_or(|(smallest, _)| value < smallest) {
+                    smallest_string = Some((value, instruction.offset));
                 }
             }
-            (None, Some(error)) => return Err(error),
-            (None, None) => data.len(),
-        };
-
-        let code: Vec<Instruction> = greedy
-            .into_iter()
-            .take_while(|instruction| instruction.offset < pool)
-            .collect();
-        match code.last() {
-            Some(last) if last.opcode == OP_RETURN && last.offset + last.size() == pool => {}
-            Some(last) => {
-                return Err(Error::PoolBoundary {
-                    offset: last.offset,
-                })
-            }
-            None => return Err(Error::PoolBoundary { offset: code_base }),
+            position += instruction.size();
+            instructions.push(instruction);
         }
 
-        for instruction in &code {
-            if !is_string_opcode(instruction.opcode) {
-                continue;
+        let pool = match smallest_string {
+            Some((value, offset)) => {
+                let pool = pool_start(code_base, value);
+                if pool > data.len() {
+                    return Err(Error::BadStringOperand { offset, value });
+                }
+                pool
             }
-            let value = instruction.operands[0];
-            let target = code_base.checked_add(value as usize);
-            if !target.is_some_and(|target| is_string_start(&data, pool, target)) {
-                return Err(Error::BadStringOperand {
-                    offset: instruction.offset,
-                    value,
-                });
+            None => data.len(),
+        };
+        let last_offset = instructions.last().map_or(code_base, |last| last.offset);
+        match instructions.last() {
+            Some(last) if position == pool && last.opcode == OP_RETURN => {}
+            _ => {
+                return Err(Error::PoolBoundary {
+                    offset: last_offset,
+                })
+            }
+        }
+
+        for instruction in &instructions {
+            if is_string_opcode(instruction.opcode) {
+                let value = instruction.operands()[0];
+                if string_range(&data, pool, code_base, value).is_none() {
+                    return Err(Error::BadStringOperand {
+                        offset: instruction.offset,
+                        value,
+                    });
+                }
             }
         }
 
@@ -178,13 +207,43 @@ impl Script {
             code_base,
             includes,
             string_pool_start: pool,
-            instructions: code,
+            instructions,
             data,
         })
     }
 
+    pub fn format(&self) -> Format {
+        self.format
+    }
+
+    pub fn header_size(&self) -> u32 {
+        self.header_size
+    }
+
+    pub fn code_base(&self) -> usize {
+        self.code_base
+    }
+
+    pub fn includes(&self) -> &[Vec<u8>] {
+        &self.includes
+    }
+
+    pub fn string_pool_start(&self) -> usize {
+        self.string_pool_start
+    }
+
+    pub fn instructions(&self) -> &[Instruction] {
+        &self.instructions
+    }
+
+    pub fn instruction_index_at(&self, offset: usize) -> Option<usize> {
+        self.instructions
+            .binary_search_by_key(&offset, |instruction| instruction.offset)
+            .ok()
+    }
+
     pub fn string_bytes(&self, instruction: &Instruction) -> Result<&[u8], Error> {
-        let value = instruction.operands.first().copied().unwrap_or(0);
+        let value = instruction.operands().first().copied().unwrap_or(0);
         let bad = Error::BadStringOperand {
             offset: instruction.offset,
             value,
@@ -192,16 +251,9 @@ impl Script {
         if !is_string_opcode(instruction.opcode) {
             return Err(bad);
         }
-        let start = self
-            .code_base
-            .checked_add(value as usize)
-            .filter(|&start| is_string_start(&self.data, self.string_pool_start, start))
-            .ok_or(bad)?;
-        let length = self.data[start..]
-            .iter()
-            .position(|&byte| byte == 0)
-            .ok_or(bad)?;
-        Ok(&self.data[start..start + length])
+        let range =
+            string_range(&self.data, self.string_pool_start, self.code_base, value).ok_or(bad)?;
+        Ok(&self.data[range])
     }
 
     pub fn string(&self, instruction: &Instruction) -> Result<&str, Error> {
@@ -216,13 +268,22 @@ fn is_string_opcode(opcode: u32) -> bool {
     opcode == OP_PUSH_STRING || opcode == OP_DEBUG
 }
 
-fn is_string_start(data: &[u8], pool: usize, target: usize) -> bool {
-    target >= pool
-        && target < data.len()
-        && target
-            .checked_sub(1)
-            .and_then(|previous| data.get(previous))
-            == Some(&0)
+fn pool_start(code_base: usize, value: u32) -> usize {
+    code_base.saturating_add(value as usize)
+}
+
+/// The bytes of the string a pointer names, if the pointer is a valid pool string start
+/// (inside the pool, preceded by NUL, and terminated by NUL before the end of the data).
+fn string_range(data: &[u8], pool: usize, code_base: usize, value: u32) -> Option<Range<usize>> {
+    let start = code_base.checked_add(value as usize)?;
+    if start < pool || start >= data.len() {
+        return None;
+    }
+    if start.checked_sub(1).and_then(|previous| data.get(previous)) != Some(&0) {
+        return None;
+    }
+    let length = data[start..].iter().position(|&byte| byte == 0)?;
+    Some(start..start + length)
 }
 
 fn read_u32(data: &[u8], position: usize) -> Result<u32, Error> {
@@ -234,36 +295,30 @@ fn read_u32(data: &[u8], position: usize) -> Result<u32, Error> {
     }
 }
 
-fn decode_one(data: &[u8], position: usize) -> Result<Instruction, Error> {
+/// Decodes the instruction at `position`. When the pool start is known, the instruction must
+/// lie entirely before it; its bytes are not read otherwise.
+fn decode_one(data: &[u8], position: usize, pool: Option<usize>) -> Result<Instruction, Error> {
+    let boundary = Error::PoolBoundary { offset: position };
+    if pool.is_some_and(|pool| position + 4 > pool) {
+        return Err(boundary);
+    }
     let opcode = read_u32(data, position)?;
     let info = opcode_info(opcode).ok_or(Error::UnregisteredOpcode {
         offset: position,
         opcode,
     })?;
-    let mut operands = Vec::with_capacity(info.operands);
-    for index in 0..info.operands {
-        operands.push(read_u32(data, position + 4 + 4 * index)?);
+    let instruction_size = 4 * (1 + info.operands);
+    if pool.is_some_and(|pool| position + instruction_size > pool) {
+        return Err(boundary);
+    }
+    let mut operands = [0; MAX_OPERANDS];
+    for (index, operand) in operands.iter_mut().enumerate().take(info.operands) {
+        *operand = read_u32(data, position + 4 + 4 * index)?;
     }
     Ok(Instruction {
         offset: position,
         opcode,
         operands,
+        operand_count: info.operands as u8,
     })
-}
-
-/// Decodes from `start` until the end of the data or the first undecodable position.
-/// Returns the instructions, the position where decoding stopped, and the reason it stopped.
-fn decode_all(data: &[u8], start: usize) -> (Vec<Instruction>, usize, Option<Error>) {
-    let mut instructions = Vec::new();
-    let mut position = start;
-    while position < data.len() {
-        match decode_one(data, position) {
-            Ok(instruction) => {
-                position += instruction.size();
-                instructions.push(instruction);
-            }
-            Err(error) => return (instructions, position, Some(error)),
-        }
-    }
-    (instructions, position, None)
 }

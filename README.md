@@ -28,3 +28,7 @@ cargo run -p hunex-chs-cli -- --strings path/to/script.chs
 ```
 
 Each instruction prints as offset, opcode id, mnemonic (where known), and operands. Opcodes 0x03 and 0x7F also print their resolved string. `--strings` prints only the resolved strings, in code order.
+
+## Known limit
+
+The code section has no explicit length in the file. The string pool is taken to start at the smallest string pointer, and the walk must end on a return exactly there. A crafted file whose smallest pointer targets a return in the middle of the code is accepted, and the code after that return is treated as pool. Real files cannot be told apart from that case, and the exe has no explicit code length either.

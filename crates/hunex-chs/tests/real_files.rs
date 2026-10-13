@@ -68,17 +68,17 @@ fn real_files_decode_with_expected_totals() {
         let bytes = std::fs::read(path).unwrap_or_else(|error| panic!("{name}: {error}"));
         let script = Script::parse(&bytes).unwrap_or_else(|error| panic!("{name}: {error}"));
 
-        let last = script.instructions.last().expect("non-empty code");
-        assert_eq!(last.opcode, RETURN, "{name}: walk ends on a return");
+        let last = script.instructions().last().expect("non-empty code");
+        assert_eq!(last.opcode(), RETURN, "{name}: walk ends on a return");
         assert_eq!(
-            last.offset + last.size(),
-            script.string_pool_start,
+            last.offset() + last.size(),
+            script.string_pool_start(),
             "{name}: walk ends exactly at the pool start"
         );
 
-        let starts: HashSet<usize> = script.instructions.iter().map(|i| i.offset).collect();
-        for instruction in &script.instructions {
-            match instruction.opcode {
+        let starts: HashSet<usize> = script.instructions().iter().map(|i| i.offset()).collect();
+        for instruction in script.instructions() {
+            match instruction.opcode() {
                 PUSH_STRING => {
                     push_string += 1;
                     script
@@ -93,16 +93,20 @@ fn real_files_decode_with_expected_totals() {
                 }
                 SKIP => {
                     skip += 1;
-                    assert_eq!(instruction.operands.len(), 3, "{name}: 0x7B operands");
-                    assert_eq!(instruction.operands[0], SKIP_MARKER, "{name}: 0x7B marker");
+                    assert_eq!(instruction.operands().len(), 3, "{name}: 0x7B operands");
+                    assert_eq!(
+                        instruction.operands()[0],
+                        SKIP_MARKER,
+                        "{name}: 0x7B marker"
+                    );
                 }
                 CODE_POINTER => {
                     code_pointer += 1;
-                    let target = script.code_base + instruction.operands[0] as usize;
+                    let target = script.code_base() + instruction.operands()[0] as usize;
                     assert!(
                         starts.contains(&target),
                         "{name}: 0x01 at 0x{:x} lands at 0x{target:x}, not an instruction start",
-                        instruction.offset
+                        instruction.offset()
                     );
                 }
                 _ => {}
@@ -133,8 +137,8 @@ fn main_sample_text_ids_and_images() {
 
     let mut ids = BTreeSet::new();
     let mut images: Vec<&str> = Vec::new();
-    for instruction in &script.instructions {
-        if !matches!(instruction.opcode, PUSH_STRING | DEBUG) {
+    for instruction in script.instructions() {
+        if !matches!(instruction.opcode(), PUSH_STRING | DEBUG) {
             continue;
         }
         let text = script.string(instruction).expect("string operand");

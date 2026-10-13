@@ -80,8 +80,8 @@ fn main() -> ExitCode {
 }
 
 fn dump(script: &Script, strings_only: bool, out: &mut impl Write) -> Result<(), CliError> {
-    for instruction in &script.instructions {
-        let string_op = matches!(instruction.opcode, 0x03 | 0x7F);
+    for instruction in script.instructions() {
+        let string_op = matches!(instruction.opcode(), 0x03 | 0x7F);
         if strings_only {
             if string_op {
                 writeln!(out, "\"{}\"", escape(script.string(instruction)?))?;
@@ -98,17 +98,19 @@ fn write_instruction(
     instruction: &Instruction,
     out: &mut impl Write,
 ) -> Result<(), CliError> {
-    let mnemonic = opcode_info(instruction.opcode)
+    let mnemonic = opcode_info(instruction.opcode())
         .and_then(|info| info.mnemonic)
         .unwrap_or("-");
     let mut line = format!(
         "0x{:06x}  0x{:03x}  {:<12}",
-        instruction.offset, instruction.opcode, mnemonic
+        instruction.offset(),
+        instruction.opcode(),
+        mnemonic
     );
-    for operand in &instruction.operands {
+    for operand in instruction.operands() {
         let _ = write!(line, " 0x{operand:08x}");
     }
-    if matches!(instruction.opcode, 0x03 | 0x7F) {
+    if matches!(instruction.opcode(), 0x03 | 0x7F) {
         let _ = write!(line, "  \"{}\"", escape(script.string(instruction)?));
     }
     writeln!(out, "{line}")?;
