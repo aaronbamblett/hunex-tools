@@ -27,13 +27,14 @@ For the Hunex variant the header size is 21 in the samples, so the code base is 
 
 Code starts at the code base and is a sequence of instructions. Each instruction is an opcode dword followed by a fixed number of inline operand dwords, given by the opcode table (see [opcodes.md](opcodes.md)). The table holds 158 registered ids: 71 base opcodes up to 0xFE and 87 commands from 0x100. An unregistered id is an error.
 
-- Opcode 0x7B has three inline dwords. They are skipped by the interpreter and kept as operands.
+- Opcode 0x7B has three inline dwords. The interpreter skips them. The first is always 0x12345678, the second is a counter, and the third is a string pointer. In the samples the third operand names a pool string in all 23,139 instances; the counter runs 0, 1, 2, ... in code order within each file that has 0x7B.
 - Opcode 0x7F has two inline dwords: a string pointer and a line number.
 
 Pointers are stored relative to the code base:
 
 - The first operand of 0x01 is a code pointer. It must land on the start of an instruction.
 - The first operand of 0x03 and of 0x7F is a string pointer into the string pool.
+- The third operand of 0x7B is a string pointer when it names a pool string. Lifting keeps it as a plain dword otherwise, and lowering writes it back as a pointer when it is a string.
 
 ## Walk and pool start
 
@@ -42,6 +43,8 @@ The string pool is the data after the code. The file does not store where the co
 1. Decode instructions from the code base.
 2. Keep the smallest string pointer seen so far. The pool start is the code base plus that pointer.
 3. Stop decoding when the position reaches the pool start. An instruction that would cross the pool start is an error. The decoder never reads bytes at or after the pool start as code.
+
+Only the 0x03 and 0x7F pointers take part in this rule. The 0x7B third operand is a pointer too, and in the samples it is never below the pool start, but it does not define the pool start.
 4. The walk must end exactly at the pool start, and the last instruction must be a return (0x1B).
 
 A file without any string pointer has no pool start, so its code must run exactly to the end of the file.
@@ -70,6 +73,7 @@ The decoder reports: bad magic, truncated data, a malformed header, an unregiste
 ## Known limits
 
 - The pool start is the smallest string pointer. A crafted file whose smallest pointer targets a return inside the code is accepted, and the code after that return is read as pool data. Real files cannot be told apart from this case, because the format has no explicit code length.
-- Pointers computed at runtime, or stored in plain 0x00 dwords, are not recognised as pointers. Lowering does not move them. The sample files show none, but this is not proven until a relocated script runs in the game.
+- Pointers computed at runtime, or stored in plain 0x00 dwords, are not recognised as pointers. Lowering does not move them. The sample files show none, but this is not proven until a relocated script runs in the game. The 0x7B third operand is handled as a pointer; a value that names no string stays a plain dword.
+- The 0x7B counter is kept as a plain dword. Its meaning is unknown, and edits do not renumber it.
 - The stack effect of each opcode and the operands of most commands are not modelled.
 - Relocation and editing are verified on sample files and in the library tests, not yet inside the game.

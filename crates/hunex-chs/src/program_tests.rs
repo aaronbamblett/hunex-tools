@@ -125,6 +125,97 @@ fn unreferenced_new_string_is_not_written() {
     assert_eq!(lower_bytes(&program), labelled());
 }
 
+fn skip_with_string() -> Vec<u8> {
+    hunex(&[0x03, 0x1C, 0x7B, MARKER, 1, 0x1C, 0x1B], b"hi\0")
+}
+
+#[test]
+fn skip_marker_third_operand_is_a_string_and_relocates() {
+    let bytes = skip_with_string();
+    let mut program = lift(&bytes);
+    assert_eq!(
+        program.items()[1].operands(),
+        &[Operand::Dword(MARKER), Operand::Dword(1), Operand::Str(0)]
+    );
+    program
+        .insert(0, Item::new(0x00, vec![Operand::Dword(7)]))
+        .unwrap();
+    let relowered = program.lower().unwrap().encode();
+    assert_ne!(relowered, bytes);
+    let reread = lift(&relowered);
+    assert_eq!(reread.items()[2].operands()[2], Operand::Str(0));
+    assert_eq!(reread.string(0), Some(&b"hi"[..]));
+}
+
+#[test]
+fn skip_marker_third_operand_that_is_not_a_string_stays_a_dword() {
+    let bytes = hunex(&[0x03, 0x1C, 0x7B, MARKER, 1, 0, 0x1B], b"hi\0");
+    let program = lift(&bytes);
+    assert_eq!(program.items()[1].operands()[2], Operand::Dword(0));
+    assert_eq!(lower_bytes(&program), bytes);
+}
+
+#[test]
+fn skip_marker_string_can_be_added_by_edit() {
+    let mut program = lift(&labelled());
+    let id = program.add_string(b"skip text").unwrap();
+    program
+        .insert(
+            0,
+            Item::new(
+                0x7B,
+                vec![Operand::Dword(MARKER), Operand::Dword(0), Operand::Str(id)],
+            ),
+        )
+        .unwrap();
+    let reread = lift(&program.lower().unwrap().encode());
+    assert_eq!(reread.items()[0].operands()[2], Operand::Str(1));
+    assert_eq!(reread.string(1), Some(&b"skip text"[..]));
+    assert_eq!(
+        program.insert(
+            0,
+            Item::new(
+                0x7B,
+                vec![Operand::Dword(MARKER), Operand::Dword(0), Operand::Str(9)]
+            )
+        ),
+        Err(EditError::UnknownString(9))
+    );
+}
+
+#[test]
+fn skip_marker_reference_cannot_move_the_pool_start() {
+    let mut program = lift(&hunex(&[0x03, 0x0C, 0x1B], b"a\0b\0"));
+    program.remove(0).unwrap();
+    program
+        .insert(
+            0,
+            Item::new(
+                0x7B,
+                vec![Operand::Dword(MARKER), Operand::Dword(0), Operand::Str(1)],
+            ),
+        )
+        .unwrap();
+    assert_eq!(program.lower(), Err(LowerError::PointerBeforePool));
+}
+
+#[test]
+fn new_string_referenced_only_by_skip_marker_is_not_an_anchor() {
+    let mut program = lift(&hunex(&[0x03, 0x0C, 0x1B], b"a\0"));
+    program.remove(0).unwrap();
+    let id = program.add_string(b"new").unwrap();
+    program
+        .insert(
+            0,
+            Item::new(
+                0x7B,
+                vec![Operand::Dword(MARKER), Operand::Dword(0), Operand::Str(id)],
+            ),
+        )
+        .unwrap();
+    assert_eq!(program.lower(), Err(LowerError::NoStringAnchor));
+}
+
 #[test]
 fn edit_errors() {
     let mut program = lift(&labelled());

@@ -63,11 +63,28 @@ fn chs_files() -> Option<Vec<PathBuf>> {
     Some(files)
 }
 
-fn skip_item() -> Item {
+fn skip_item(probe: usize) -> Item {
     Item::new(
         SKIP,
-        vec![Operand::Dword(MARKER), Operand::Dword(0), Operand::Dword(0)],
+        vec![
+            Operand::Dword(MARKER),
+            Operand::Dword(0),
+            Operand::Str(probe),
+        ],
     )
+}
+
+/// Bytes of every 0x7B third operand, in item order. Panics if one is not a string.
+fn skip_strings(program: &Program) -> Vec<Vec<u8>> {
+    program
+        .items()
+        .iter()
+        .filter(|item| item.opcode() == SKIP)
+        .map(|item| match item.operands()[2] {
+            Operand::Str(id) => program.string(id).unwrap().to_vec(),
+            _ => panic!("0x7B third operand is not a string"),
+        })
+        .collect()
 }
 
 #[test]
@@ -86,10 +103,10 @@ fn real_files_survive_insertions_and_a_new_string() {
             .unwrap_or_else(|error| panic!("{name}: {error}"));
 
         let mut edited = original.clone();
-        edited.insert(0, skip_item()).unwrap();
-        let middle = edited.items().len() / 2;
-        edited.insert(middle, skip_item()).unwrap();
         let probe = edited.add_string(PROBE).unwrap();
+        edited.insert(0, skip_item(probe)).unwrap();
+        let middle = edited.items().len() / 2;
+        edited.insert(middle, skip_item(probe)).unwrap();
         edited
             .insert(
                 middle + 1,
@@ -109,6 +126,25 @@ fn real_files_survive_insertions_and_a_new_string() {
             logical(&reread),
             logical(&edited),
             "{name}: relocated program differs from the edited program"
+        );
+
+        let original_skips = skip_strings(&original);
+        let reread_skips = skip_strings(&reread);
+        let probes = reread_skips
+            .iter()
+            .filter(|bytes| bytes.as_slice() == PROBE)
+            .count();
+        assert_eq!(
+            probes, 2,
+            "{name}: inserted 0x7B string operands must resolve to the probe"
+        );
+        let others: Vec<Vec<u8>> = reread_skips
+            .into_iter()
+            .filter(|bytes| bytes.as_slice() != PROBE)
+            .collect();
+        assert_eq!(
+            others, original_skips,
+            "{name}: 0x7B string operands changed bytes"
         );
 
         let mut restored = reread.clone();

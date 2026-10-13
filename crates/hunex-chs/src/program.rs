@@ -22,6 +22,16 @@ use crate::{
 };
 
 const OP_CODE_POINTER: u32 = 0x01;
+const OP_SKIP_MARKER: u32 = 0x7B;
+
+/// Operand slots that hold a string pointer. The third operand of 0x7B is one, in the files;
+/// lifting keeps it as a plain dword when it does not name a string.
+fn is_string_slot(opcode: u32, index: usize) -> bool {
+    matches!(
+        (opcode, index),
+        (OP_PUSH_STRING | OP_DEBUG, 0) | (OP_SKIP_MARKER, 2)
+    )
+}
 
 pub type LabelId = usize;
 pub type StrId = usize;
@@ -53,7 +63,8 @@ impl Item {
     }
 
     /// Checks the opcode, operand count and operand types. The first operand of 0x01 must be a
-    /// label, and the first operand of 0x03 and 0x7F must be a string; the rest are dwords.
+    /// label. The first operand of 0x03 and 0x7F, and the third operand of 0x7B, may be strings.
+    /// Other operands are dwords, and the first operand of 0x03 and 0x7F must be a string.
     pub fn check(&self, labels: usize, strings: usize) -> Result<(), EditError> {
         let info = opcode_info(self.opcode).ok_or(EditError::UnregisteredOpcode(self.opcode))?;
         if self.operands.len() != info.operands {
@@ -65,8 +76,8 @@ impl Item {
         }
         for (index, operand) in self.operands.iter().enumerate() {
             let expects_label = self.opcode == OP_CODE_POINTER && index == 0;
-            let expects_string =
-                (self.opcode == OP_PUSH_STRING || self.opcode == OP_DEBUG) && index == 0;
+            let expects_string = is_string_slot(self.opcode, index);
+            let string_only = matches!((self.opcode, index), (OP_PUSH_STRING | OP_DEBUG, 0));
             match operand {
                 Operand::Label(id) if expects_label => {
                     if *id >= labels {
@@ -78,7 +89,7 @@ impl Item {
                         return Err(EditError::UnknownString(*id));
                     }
                 }
-                Operand::Dword(_) if !expects_label && !expects_string => {}
+                Operand::Dword(_) if !expects_label && !string_only => {}
                 _ => {
                     return Err(EditError::OperandType {
                         opcode: self.opcode,
@@ -172,6 +183,12 @@ pub enum LowerError {
     MissingFinalReturn,
     /// A tail without any string would be read as code.
     TailWithoutStrings,
+    /// An original string is referenced by an operand other than a 0x03 or 0x7F pointer, and
+    /// it lies before the pool start that those pointers define.
+    PointerBeforePool,
+    /// The first pool entry is not referenced by a 0x03 or 0x7F pointer, so the decoder would
+    /// not find the pool start.
+    NoStringAnchor,
     DanglingReference,
     OutOfRange,
 }
@@ -212,6 +229,14 @@ impl fmt::Display for LowerError {
             LowerError::TailWithoutStrings => {
                 write!(f, "pool tail bytes with no string to anchor them")
             }
+            LowerError::PointerBeforePool => write!(
+                f,
+                "a string is referenced before the pool start that 0x03 and 0x7F pointers define"
+            ),
+            LowerError::NoStringAnchor => write!(
+                f,
+                "the first pool entry is not referenced by a 0x03 or 0x7F pointer"
+            ),
             LowerError::DanglingReference => write!(f, "a label or string reference is dangling"),
             LowerError::OutOfRange => write!(f, "a pointer does not fit in a dword"),
         }
@@ -387,22 +412,39 @@ impl Program {
         let code_end = cursor;
         offsets.push(code_end);
 
+        // `anchored`: referenced by a 0x03 or 0x7F pointer, which is what the decoder uses to
+        // find the pool start. `used`: referenced by any string operand.
         let mut used = alloc::vec![false; self.strings.len()];
+        let mut anchored = alloc::vec![false; self.strings.len()];
         for item in &self.items {
-            for operand in &item.operands {
+            for (slot, operand) in item.operands.iter().enumerate() {
                 if let Operand::Str(id) = operand {
                     *used.get_mut(*id).ok_or(LowerError::DanglingReference)? = true;
+                    if matches!((item.opcode, slot), (OP_PUSH_STRING | OP_DEBUG, 0)) {
+                        anchored[*id] = true;
+                    }
                 }
             }
         }
-        let first_referenced = self
+        let anchor = self
             .strings
             .iter()
             .enumerate()
-            .find(|(index, entry)| entry.original && used[*index])
+            .find(|(index, entry)| entry.original && anchored[*index])
             .map(|(index, _)| index);
+        let referenced_before_anchor = match anchor {
+            Some(anchor) => (0..anchor).any(|index| self.strings[index].original && used[index]),
+            None => self
+                .strings
+                .iter()
+                .enumerate()
+                .any(|(index, entry)| entry.original && used[index]),
+        };
+        if referenced_before_anchor {
+            return Err(LowerError::PointerBeforePool);
+        }
         let mut emitted = Vec::new();
-        if let Some(first) = first_referenced {
+        if let Some(first) = anchor {
             for (index, entry) in self.strings.iter().enumerate().skip(first) {
                 if entry.original {
                     emitted.push(index);
@@ -412,6 +454,11 @@ impl Program {
         for (index, entry) in self.strings.iter().enumerate() {
             if !entry.original && used[index] {
                 emitted.push(index);
+            }
+        }
+        if let Some(&first) = emitted.first() {
+            if !anchored[first] {
+                return Err(LowerError::NoStringAnchor);
             }
         }
 
@@ -500,6 +547,12 @@ impl Script {
         label_targets.sort_unstable();
         label_targets.dedup();
 
+        let resolve = |value: u32| -> Option<StrId> {
+            code_base
+                .checked_add(value as usize)
+                .and_then(|address| address.checked_sub(pool_start))
+                .and_then(|relative| entry_starts.binary_search(&relative).ok())
+        };
         let mut items = Vec::with_capacity(self.instructions().len());
         for instruction in self.instructions() {
             let mut operands = Vec::with_capacity(instruction.operands().len());
@@ -520,11 +573,10 @@ impl Script {
                             offset: instruction.offset(),
                             value,
                         };
-                        let relative = code_base
-                            .checked_add(value as usize)
-                            .and_then(|address| address.checked_sub(pool_start))
-                            .ok_or(bad)?;
-                        Operand::Str(entry_starts.binary_search(&relative).map_err(|_| bad)?)
+                        Operand::Str(resolve(value).ok_or(bad)?)
+                    }
+                    (OP_SKIP_MARKER, 2) => {
+                        resolve(value).map_or(Operand::Dword(value), Operand::Str)
                     }
                     _ => Operand::Dword(value),
                 };

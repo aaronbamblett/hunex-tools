@@ -4,7 +4,7 @@
 
 First release.
 
-- hunex-chs: decoder for `.chs` compiled scripts (Hunex and Buriko headers), with exact re-encoding, lifting to a symbolic form with labels and strings, lowering, and an editing API. Relocation was checked on all 250 sample scripts.
+- hunex-chs: decoder for `.chs` compiled scripts (Hunex and Buriko headers), with exact re-encoding, lifting to a symbolic form with labels and strings, lowering, and an editing API. Relocation was checked on all 250 sample scripts. The third operand of 0x7B is a string pointer; lifting and lowering relocate it.
 - hunex-lenzu: decoder for LenZu compressed streams with checksum verification, and a literal-only encoder. The literal-only output is valid for the format but larger than its input, and not yet confirmed to be accepted by the game.
 - hunex-hfa: reader and writer for HFA script archives. The reader accepts only the packed layout the originals use; the writer produces it.
 - hunex-cli (`hunex`): `chs dump` (listing, `--strings`, `--asm`), `chs roundtrip`, `chs asm`, `hfa list`, `hfa unpack` (with `--decompress`), `hfa pack` (with `--base`), `lenzu decompress`, `lenzu compress`, `--version` and `help`.

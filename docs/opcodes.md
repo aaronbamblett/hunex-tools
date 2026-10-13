@@ -4,7 +4,7 @@ Generated from `crates/hunex-chs/src/opcodes.rs` by the `opcodes_doc` test. Do n
 
 158 registered ids: 71 base opcodes (0x00 to 0xFE) and 87 commands (0x100 and up). Any other id is an error when decoding.
 
-Inline dwords are the operands stored after the opcode. Opcode 0x7B skips three dwords, which are kept as its operands. The first operand of 0x01, 0x03 and 0x7F is a code or string pointer; the others are plain dwords.
+Inline dwords are the operands stored after the opcode. Opcode 0x7B skips three dwords, which are kept as its operands. The first operand of 0x01, 0x03 and 0x7F, and the third operand of 0x7B, are pointers (code or string); the others are plain dwords.
 
 Mnemonics are only given where the notes name an opcode and the exe analysis does not contradict the name; "-" means no name.
 

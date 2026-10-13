@@ -32,8 +32,8 @@ An instruction is an opcode followed by its operands:
 - Operands are:
   - a number: `0x10` or `16`;
   - a label reference: `L_0000`, allowed only as the first operand of `PushOffset` (0x01);
-  - a string reference: `S_0000`, allowed only as the first operand of `PushString` (0x03) and of the 0x7F record;
-  - a quoted string: `"text"`, which creates a new string at that point.
+  - a string reference: `S_0000`, allowed as the first operand of `PushString` (0x03), of the 0x7F record, and as the third operand of the 0x7B skip record;
+  - a quoted string: `"text"`, which creates a new string at that point, in any of those string positions.
 
 Operand counts follow the opcode table. Any other operand kind is an error.
 
@@ -44,6 +44,7 @@ Quoted text escapes `\n`, `\r`, `\t`, `\\`, `\"` and `\xNN` (two hex digits, any
 ## Editing rules
 
 - New strings go in `string new` entries or as quoted operands. They are written after the original entries, and only if code references them.
+- A string referenced only by a 0x7B operand cannot be the pool start: the decoder finds the pool start from 0x03 and 0x7F pointers alone. Lowering fails with an error when that would happen (`NoStringAnchor` or `PointerBeforePool` in the library).
 - An edited original `string` line keeps its place in the pool; the assembler does not know it was edited. Use `string new` to add an entry that is written after the originals.
 - Inserting an instruction moves labels that sit at or after its position, so a label stays on the instruction it named.
 - A label cannot point past the end of the code.

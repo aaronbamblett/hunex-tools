@@ -1,7 +1,7 @@
 use std::collections::{BTreeSet, HashSet};
 use std::path::PathBuf;
 
-use hunex_chs::Script;
+use hunex_chs::{Operand, Script};
 
 const RETURN: u32 = 0x1B;
 const PUSH_STRING: u32 = 0x03;
@@ -224,4 +224,40 @@ fn real_files_lift_lower_round_trip_byte_for_byte() {
     }
     println!("lift/lower: {identical} of {} files identical", files.len());
     assert_eq!(identical, 250);
+}
+
+#[test]
+fn real_files_skip_operand_is_a_string_pointer_above_the_pool_start() {
+    let Some(files) = chs_files() else {
+        return;
+    };
+    let mut skips = 0usize;
+    let mut fallbacks = 0usize;
+    for path in &files {
+        let name = path.display();
+        let bytes = std::fs::read(path).unwrap_or_else(|error| panic!("{name}: {error}"));
+        let script = Script::parse(&bytes).unwrap_or_else(|error| panic!("{name}: {error}"));
+        for instruction in script.instructions() {
+            if instruction.opcode() == SKIP {
+                skips += 1;
+                let pointer = instruction.operands()[2] as usize + script.code_base();
+                assert!(
+                    pointer >= script.string_pool_start(),
+                    "{name}: 0x7B pointer at 0x{:x} is below the pool start",
+                    instruction.offset()
+                );
+            }
+        }
+        let program = script
+            .lift()
+            .unwrap_or_else(|error| panic!("{name}: lift: {error}"));
+        for item in program.items() {
+            if item.opcode() == SKIP && !matches!(item.operands()[2], Operand::Str(_)) {
+                fallbacks += 1;
+            }
+        }
+    }
+    println!("0x7B: {skips} instructions, {fallbacks} third operands kept as dwords");
+    assert_eq!(skips, 23_139);
+    assert_eq!(fallbacks, 0);
 }

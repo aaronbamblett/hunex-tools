@@ -98,7 +98,7 @@ The end-to-end test uses `HUNEX_WORK` as its scratch folder when set, and remove
 ## Known limits
 
 - The `.chs` code section has no explicit length. The string pool starts at the smallest string pointer, so a crafted file can make code look like pool data. Real files cannot be told apart from this case.
-- Pointers computed at runtime, or stored in plain 0x00 dwords, are not recognised and are not moved when a script is lowered.
+- Pointers computed at runtime, or stored in plain 0x00 dwords, are not recognised and are not moved when a script is lowered. The third operand of 0x7B is handled as a string pointer, as are the first operands of 0x03 and 0x7F.
 - The HFA reader accepts only the packed layout the originals use.
 
 ## Licence
