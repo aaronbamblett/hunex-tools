@@ -120,7 +120,7 @@ fn rgba8_texture_is_deswizzled_and_decoded() {
 }
 
 #[test]
-fn bc4_block_decodes_to_grey() {
+fn bc4_block_decodes_to_gray() {
     let mut block = [0u8; 8];
     block[0] = 255;
     block[1] = 0;
@@ -138,10 +138,10 @@ fn bc4_block_decodes_to_grey() {
 
 #[test]
 fn unsupported_and_mismatched_textures_are_errors() {
-    let file = bntx(0x1C06, 4, 4, 512, &vec![0u8; 512]);
+    let file = bntx(0x7777, 4, 4, 512, &vec![0u8; 512]);
     assert!(matches!(
         decode_texture(&Bntx::parse(&file).unwrap(), 0),
-        Err(Error::UnsupportedFormat { code: 0x1C06, .. })
+        Err(Error::UnsupportedFormat { code: 0x7777, .. })
     ));
     let file = bntx(0x0B06, 4, 4, 1024, &vec![0u8; 512]);
     assert!(matches!(
@@ -209,4 +209,19 @@ fn an_nxx_wrapper_declaring_too_much_output_is_rejected() {
     wrapped.extend_from_slice(&[0; 4]);
     wrapped.extend_from_slice(&[0x78, 0x9C, 0, 0]);
     assert!(matches!(unwrap(&wrapped), Err(Error::Limit { .. })));
+}
+
+#[test]
+fn bc3_block_reads_color_from_the_color_block_and_alpha_from_the_alpha_block() {
+    let mut block = vec![0u8; 512];
+    block[0] = 0;
+    block[1] = 255;
+    block[8..10].copy_from_slice(&0xFFFFu16.to_le_bytes());
+    let file = bntx(0x1C06, 4, 4, 512, &block);
+    let parsed = Bntx::parse(&file).unwrap();
+    let image = decode_texture(&parsed, 0).unwrap();
+    assert_eq!((image.width, image.height), (4, 4));
+    for pixel in image.pixels.chunks_exact(4) {
+        assert_eq!(pixel, [255, 255, 255, 0]);
+    }
 }

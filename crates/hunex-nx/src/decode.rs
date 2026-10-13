@@ -8,8 +8,11 @@ use crate::{Error, MAX_TEXTURE_PIXELS, MAX_TEXTURE_SIDE};
 /// Decoded pixels: RGBA, row by row, four bytes per pixel.
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct Rgba {
+    /// Width of the decoded image in pixels.
     pub width: usize,
+    /// Height of the decoded image in pixels.
     pub height: usize,
+    /// The decoded pixel bytes.
     pub pixels: Vec<u8>,
 }
 
@@ -17,6 +20,7 @@ pub struct Rgba {
 enum Codec {
     Bc7,
     Bc4,
+    Bc3,
     Rgba8,
 }
 
@@ -25,11 +29,8 @@ fn codec(code: u32) -> Result<(Codec, usize, usize), Error> {
     match code {
         0x2006 | 0x2001 => Ok((Codec::Bc7, 16, 4)),
         0x1D01 => Ok((Codec::Bc4, 8, 4)),
+        0x1C06 => Ok((Codec::Bc3, 16, 4)),
         0x0B06 => Ok((Codec::Rgba8, 4, 1)),
-        0x1C06 => Err(Error::UnsupportedFormat {
-            code,
-            reason: "BC3 channel reading is open in the spec",
-        }),
         _ => Err(Error::UnsupportedFormat {
             code,
             reason: "unknown format",
@@ -48,7 +49,8 @@ pub fn stored_size(row_bytes: usize, rows: usize) -> Option<usize> {
         .checked_mul(GOB_BYTES)
 }
 
-/// Decodes texture `index` of a BNTX container to RGBA.
+/// Decodes texture `index` of a BNTX container to RGBA. BC3 textures use the standard channel
+/// reading: color from the color block, alpha from the alpha block.
 pub fn decode_texture(bntx: &Bntx<'_>, index: usize) -> Result<Rgba, Error> {
     let texture: &Texture = bntx.textures.get(index).ok_or(Error::BadIndex {
         index,
@@ -93,8 +95,8 @@ pub fn decode_texture(bntx: &Bntx<'_>, index: usize) -> Result<Rgba, Error> {
                 }
             }
         }
-        Codec::Bc7 | Codec::Bc4 => {
-            let block_bytes = if matches!(codec, Codec::Bc7) { 16 } else { 8 };
+        Codec::Bc7 | Codec::Bc4 | Codec::Bc3 => {
+            let block_bytes = if matches!(codec, Codec::Bc4) { 8 } else { 16 };
             let mut tile = [0u8; 64];
             for by in 0..rows {
                 for bx in 0..width_units {
@@ -102,9 +104,10 @@ pub fn decode_texture(bntx: &Bntx<'_>, index: usize) -> Result<Rgba, Error> {
                     let compressed = &units[start..start + block_bytes];
                     match codec {
                         Codec::Bc7 => bcdec_rs::bc7(compressed, &mut tile, 16),
+                        Codec::Bc3 => bcdec_rs::bc3(compressed, &mut tile, 16),
                         _ => {
-                            let grey = &mut tile[..16];
-                            bcdec_rs::bc4(compressed, grey, 4, false);
+                            let gray = &mut tile[..16];
+                            bcdec_rs::bc4(compressed, gray, 4, false);
                         }
                     }
                     for py in 0..4 {
@@ -117,6 +120,11 @@ pub fn decode_texture(bntx: &Bntx<'_>, index: usize) -> Result<Rgba, Error> {
                             let target = (y * width + x) * 4;
                             match codec {
                                 Codec::Bc7 => {
+                                    let source = py * 16 + px * 4;
+                                    pixels[target..target + 4]
+                                        .copy_from_slice(&tile[source..source + 4]);
+                                }
+                                Codec::Bc3 => {
                                     let source = py * 16 + px * 4;
                                     pixels[target..target + 4]
                                         .copy_from_slice(&tile[source..source + 4]);

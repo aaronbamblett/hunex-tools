@@ -6,12 +6,19 @@ use crate::Error;
 /// One texture record of a BNTX container.
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct Texture {
+    /// Name of the texture, when the file stores one.
     pub name: Option<String>,
+    /// The texture format code as stored in the file.
     pub format: u32,
+    /// Width of the texture in pixels.
     pub width: usize,
+    /// Height of the texture in pixels.
     pub height: usize,
+    /// Size of the texture's image data in bytes.
     pub image_size: usize,
+    /// Alignment of the image data, as stored.
     pub alignment: usize,
+    /// The block layout code, as stored.
     pub layout: u32,
     /// Offset of the texture's data in the container.
     pub data_offset: usize,
@@ -21,6 +28,7 @@ pub struct Texture {
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct Bntx<'a> {
     bytes: &'a [u8],
+    /// The textures in the file, in order.
     pub textures: Vec<Texture>,
 }
 
@@ -62,6 +70,7 @@ fn align_up(value: usize, alignment: usize) -> Option<usize> {
 }
 
 impl<'a> Bntx<'a> {
+    /// Parses a BNTX file and its textures.
     pub fn parse(bytes: &'a [u8]) -> Result<Bntx<'a>, Error> {
         if !bytes.starts_with(b"BNTX") {
             return Err(Error::BadMagic { what: "BNTX" });

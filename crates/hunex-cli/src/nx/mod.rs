@@ -8,6 +8,7 @@ use hunex_nx::{decode_texture, is_nxx, unwrap, Bntx};
 
 use crate::cli::{finish, parse, usage, CliError};
 
+/// Help text for the `nx` (Switch textures) command.
 pub const HELP: &str = "\
 hunex nx: Switch textures (NXX-wrapped BNTX)
 
@@ -16,12 +17,13 @@ Usage:
   hunex nx to-png <in> -o <out.png> [--index N]   decode one texture (default 0) to PNG
   hunex nx help
 
-BC3 (format 0x1C06) textures are reported as unsupported.
+Formats 0x2006, 0x2001 (BC7), 0x1D01 (BC4), 0x1C06 (BC3) and 0x0B06 (RGBA8) decode; other codes are reported as unsupported.
 ";
 
 const INFO_USAGE: &str = "usage: hunex nx info <in>\n";
 const TO_PNG_USAGE: &str = "usage: hunex nx to-png <in> -o <out.png> [--index N]\n";
 
+/// Runs the command with the arguments that follow its name. Returns the exit code.
 pub fn run(args: &[String]) -> ExitCode {
     match args.first().map(String::as_str) {
         None => usage(HELP),
@@ -61,7 +63,12 @@ fn info(args: &[String]) -> ExitCode {
 fn info_file(path: &str) -> Result<(), CliError> {
     let bytes = bntx_bytes(path)?;
     let container = Bntx::parse(&bytes).map_err(|e| CliError::Message(format!("{path}: {e}")))?;
-    println!("{} textures", container.textures.len());
+    let count = container.textures.len();
+    println!(
+        "{} {}",
+        count,
+        if count == 1 { "texture" } else { "textures" }
+    );
     for (index, texture) in container.textures.iter().enumerate() {
         let status = match decode_texture(&container, index) {
             Ok(_) => "decodes".to_string(),
