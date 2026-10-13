@@ -1,0 +1,13 @@
+[package]
+name = "hunex-chs-cli"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+description = "chs-dump: print the instruction list of a HuneX .chs file"
+
+[[bin]]
+name = "chs-dump"
+path = "src/main.rs"
+
+[dependencies]
+hunex-chs = { path = "../hunex-chs" }

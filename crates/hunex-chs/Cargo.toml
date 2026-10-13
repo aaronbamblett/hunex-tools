@@ -1,0 +1,8 @@
+[package]
+name = "hunex-chs"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+description = "Decoder for HuneX compiled script (.chs) files"
+
+[dependencies]
