@@ -1,0 +1,14 @@
+[package]
+name = "hunex-ctd"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+repository.workspace = true
+rust-version.workspace = true
+description = "Reader and writer for the script text (.ctd) files of the HuneX engine"
+keywords = ["hunex", "ctd", "text", "no-std"]
+categories = ["parser-implementations", "no-std"]
+readme = "README.md"
+
+[dependencies]
+hunex-lenzu = { path = "../hunex-lenzu", version = "0.1.0" }

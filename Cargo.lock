@@ -16,6 +16,13 @@ dependencies = [
 ]
 
 [[package]]
+name = "hunex-ctd"
+version = "0.1.0"
+dependencies = [
+ "hunex-lenzu",
+]
+
+[[package]]
 name = "hunex-hfa"
 version = "0.1.0"
 
