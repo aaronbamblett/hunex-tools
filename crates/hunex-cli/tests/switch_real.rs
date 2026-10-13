@@ -1,5 +1,5 @@
-//! Switch RomFS checks, gated on HUNEX_TSUKI_ROMFS, HUNEX_MAHOYO_ROMFS, HUNEX_TSUKI_DUMP and
-//! HUNEX_MAHOYO_DUMP. Scratch files go to HUNEX_WORK, which should be a folder under /var/tmp
+//! Switch RomFS checks, gated on HUNEX_SWITCH_ROMFS_A, HUNEX_SWITCH_ROMFS_B, HUNEX_SWITCH_DUMP_A and
+//! HUNEX_SWITCH_DUMP_B. Scratch files go to HUNEX_WORK, which should be a folder under /var/tmp
 //! (not /tmp, which is RAM here); the tests remove what they create.
 //!
 //! Memory: every check reads archives entry by entry (seek and read), never a whole data file,
@@ -24,12 +24,12 @@ fn romfs(var: &str) -> Option<PathBuf> {
     }
 }
 
-fn work_root() -> PathBuf {
-    let root = match std::env::var_os("HUNEX_WORK") {
-        Some(dir) => PathBuf::from(dir),
-        None => std::env::temp_dir(),
-    };
-    root.join(format!("hunex-switch-test-{}", std::process::id()))
+fn work_root() -> Option<PathBuf> {
+    let dir = std::env::var_os("HUNEX_WORK").map(PathBuf::from);
+    if dir.is_none() {
+        eprintln!("HUNEX_WORK is not set; skipping the Switch checks");
+    }
+    dir.map(|dir| dir.join(format!("hunex-switch-test-{}", std::process::id())))
 }
 
 fn hunex(args: &[&str]) -> std::process::Output {
@@ -65,13 +65,16 @@ fn read_entry(file: &mut fs::File, meta: &hunex_mrg::Meta) -> Vec<u8> {
 #[test]
 fn allscr_scripts_decode_byte_identical_to_the_dumps() {
     for (romfs_var, dump_var, expected) in [
-        ("HUNEX_TSUKI_ROMFS", "HUNEX_TSUKI_DUMP", 549usize),
-        ("HUNEX_MAHOYO_ROMFS", "HUNEX_MAHOYO_DUMP", 249usize),
+        ("HUNEX_SWITCH_ROMFS_A", "HUNEX_SWITCH_DUMP_A", 549usize),
+        ("HUNEX_SWITCH_ROMFS_B", "HUNEX_SWITCH_DUMP_B", 249usize),
     ] {
         let (Some(romfs), Some(dump)) = (romfs(romfs_var), romfs(dump_var)) else {
             continue;
         };
-        let work = work_root().join(romfs_var);
+        let Some(base) = work_root() else {
+            continue;
+        };
+        let work = base.join(romfs_var);
         fs::create_dir_all(&work).unwrap();
         let input = romfs.join("allscr.mrg");
         hunex(&[
@@ -105,7 +108,7 @@ fn allscr_scripts_decode_byte_identical_to_the_dumps() {
 
 #[test]
 fn entry_counts_match_the_spec_tables() {
-    let Some(romfs) = romfs("HUNEX_TSUKI_ROMFS") else {
+    let Some(romfs) = romfs("HUNEX_SWITCH_ROMFS_A") else {
         return;
     };
     let expected = [
@@ -146,7 +149,7 @@ fn entry_counts_match_the_spec_tables() {
     assert_eq!(allpachd.get("NXGZ"), Some(&49));
     assert_eq!(allpachd.get("MZP"), Some(&6));
 
-    if let Some(mahoyo) = romfs_path("HUNEX_MAHOYO_ROMFS") {
+    if let Some(set_b) = romfs_path("HUNEX_SWITCH_ROMFS_B") {
         for (set, entries) in [
             ("allpachdml", 89usize),
             ("allpacml", 167),
@@ -155,7 +158,7 @@ fn entry_counts_match_the_spec_tables() {
             ("jallpachd", 11_414),
             ("parts", 2),
         ] {
-            assert_eq!(set_index(&mahoyo, set).len(), entries, "mahoyo {set}");
+            assert_eq!(set_index(&set_b, set).len(), entries, "set_b {set}");
         }
     }
     println!("entry counts match the spec tables");
@@ -177,7 +180,7 @@ fn decode_named(romfs: &Path, set: &str, index: usize, name: &str) -> hunex_nx::
 
 #[test]
 fn the_two_spec_backgrounds_decode_to_their_hashes() {
-    if let Some(romfs) = romfs("HUNEX_TSUKI_ROMFS") {
+    if let Some(romfs) = romfs("HUNEX_SWITCH_ROMFS_A") {
         let image = decode_named(&romfs, "w_allpac", 2598, "IMG5012.NXGZ");
         assert_eq!((image.width, image.height), (1280, 720));
         let hash = sha256_hex(&image.pixels);
@@ -187,7 +190,7 @@ fn the_two_spec_backgrounds_decode_to_their_hashes() {
             "ef58e090d43ed16f91c058d47feb16f1e53fe86f1ddac744d45d70530d879579"
         );
     }
-    if let Some(romfs) = romfs("HUNEX_MAHOYO_ROMFS") {
+    if let Some(romfs) = romfs("HUNEX_SWITCH_ROMFS_B") {
         let image = decode_named(&romfs, "jallpac", 850, "IMG0179.NXZ");
         assert_eq!((image.width, image.height), (1400, 840));
         let hash = sha256_hex(&image.pixels);
@@ -202,8 +205,8 @@ fn the_two_spec_backgrounds_decode_to_their_hashes() {
 #[test]
 fn script_text_line_counts_and_lookup() {
     for (var, lines) in [
-        ("HUNEX_TSUKI_ROMFS", 43_969usize),
-        ("HUNEX_MAHOYO_ROMFS", 24_134usize),
+        ("HUNEX_SWITCH_ROMFS_A", 43_969usize),
+        ("HUNEX_SWITCH_ROMFS_B", 24_134usize),
     ] {
         let Some(romfs) = romfs(var) else {
             continue;
@@ -227,11 +230,11 @@ fn script_text_line_counts_and_lookup() {
 fn sampled_textures_decode_across_sets_with_no_errors() {
     let games = [
         (
-            "HUNEX_TSUKI_ROMFS",
+            "HUNEX_SWITCH_ROMFS_A",
             vec!["w_allpac", "w_allpacml", "w_allui", "allpachd"],
         ),
         (
-            "HUNEX_MAHOYO_ROMFS",
+            "HUNEX_SWITCH_ROMFS_B",
             vec!["jallpac", "jallpachd", "allui", "allpacml"],
         ),
     ];
@@ -300,10 +303,13 @@ fn sampled_textures_decode_across_sets_with_no_errors() {
 
 #[test]
 fn text_export_writes_one_line_per_script_id() {
-    let Some(romfs) = romfs("HUNEX_TSUKI_ROMFS") else {
+    let Some(romfs) = romfs("HUNEX_SWITCH_ROMFS_A") else {
         return;
     };
-    let work = work_root().join("text");
+    let Some(base) = work_root() else {
+        return;
+    };
+    let work = base.join("text");
     fs::create_dir_all(&work).unwrap();
     let output = work.join("lines.txt");
     hunex(&[

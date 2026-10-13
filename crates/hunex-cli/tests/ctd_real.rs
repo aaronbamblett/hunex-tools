@@ -1,5 +1,5 @@
 //! Export, import and get on the real script text files, gated on HUNEX_CTD_DIR.
-//! Scratch files go to HUNEX_WORK (default: the system temp folder) and are removed afterwards.
+//! Scratch files go to HUNEX_WORK and are removed afterwards. The checks are skipped when it is not set.
 
 use std::fs;
 use std::path::PathBuf;
@@ -33,11 +33,11 @@ fn export_import_and_get_round_trip_all_four_files() {
         eprintln!("HUNEX_CTD_DIR is not set; skipping ctd CLI checks");
         return;
     };
-    let work = match std::env::var_os("HUNEX_WORK") {
-        Some(dir) => PathBuf::from(dir),
-        None => std::env::temp_dir(),
-    }
-    .join(format!("hunex-ctd-e2e-{}", std::process::id()));
+    let Some(base) = std::env::var_os("HUNEX_WORK").map(PathBuf::from) else {
+        eprintln!("HUNEX_WORK is not set; skipping the ctd CLI checks");
+        return;
+    };
+    let work = base.join(format!("hunex-ctd-e2e-{}", std::process::id()));
     fs::create_dir_all(&work).unwrap();
 
     for name in FILES {

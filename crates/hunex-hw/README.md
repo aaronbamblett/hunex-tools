@@ -6,4 +6,4 @@ Reader and writer for the `.hw` audio files of the HuneX engine. A `.hw` file is
 - `wrap` writes the header for an Ogg Vorbis file.
 - `vorbis_info` reads the channel count, sample rate and length of an Ogg Vorbis file.
 
-Part of the [hunex-tools](https://github.com/aaronbamblett/hunex-tools) project. Unofficial; not affiliated with HuneX or TYPE-MOON. The crate does not include any game data.
+Part of the [hunex-tools](https://github.com/aaronbamblett/hunex-tools) project. Unofficial; not affiliated with HuneX. The crate does not include any game data.

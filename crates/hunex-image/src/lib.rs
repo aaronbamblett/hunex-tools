@@ -9,7 +9,17 @@
 //! Tiles abut at their full size: tile (column c, row r) covers canvas pixels from (c * tile
 //! width, r * tile height). The image is the canvas, width x height. The crop byte is kept as
 //! read; its meaning is unknown.
+//!
+//! ```
+//! // One 512 by 256 tile of a single color, rebuilt as an MZP container and decoded again.
+//! let rgba: Vec<u8> = [10, 20, 30, 255].repeat(512 * 256);
+//! let file = hunex_image::encode_mzp(&rgba, 512, 256, None).unwrap();
+//! let image = hunex_image::decode_mzp(&file).unwrap();
+//! assert_eq!((image.width, image.height), (512, 256));
+//! assert_eq!(image.rgba, rgba);
+//! ```
 
+#![warn(missing_docs)]
 #![no_std]
 
 extern crate alloc;
@@ -24,11 +34,17 @@ use core::fmt;
 
 use hunex_mzp::Container;
 
+/// Size of the header entry's fixed part, in bytes: six u16 fields and four one-byte fields.
 pub const HEADER_BYTES: usize = 16;
+/// Size of the HEP tile header, in bytes.
 pub const HEP_HEADER: usize = 32;
+/// Entries in a palette: 256.
 pub const PALETTE_ENTRIES: usize = 256;
+/// Size of a palette in bytes: 256 entries of four bytes.
 pub const PALETTE_BYTES: usize = PALETTE_ENTRIES * 4;
+/// Bitmap type of a HEP tile image: 0x0C.
 pub const BITMAP_TYPE: u8 = 0x0C;
+/// Bitmap type of a font atlas: 0x01, one palette-indexed image.
 pub const ATLAS_TYPE: u8 = 0x01;
 const HEP_MAGIC: &[u8; 4] = b"HEP\0";
 const HEP_CONSTANTS: [u32; 3] = [0x2530_0000, 6, 16];
@@ -75,31 +91,44 @@ const fn make_alpha_codes() -> [u8; 256] {
 /// mapping can produce.
 pub const ALPHA_CODES: [u8; 256] = make_alpha_codes();
 
+/// Errors from reading or writing an image archive.
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub enum Error {
+    /// The MZP container is malformed.
     Container(hunex_mzp::Error),
+    /// An MZX0 stream is malformed.
     Mzx(hunex_mzx::Error),
     /// A header field is malformed or inconsistent.
     BadHeader {
+        /// A header field has a value this crate does not accept.
         field: &'static str,
     },
     /// A header field has a value this crate does not decode.
     Unsupported {
+        /// A header field has a value this crate does not support.
         field: &'static str,
+        /// The value the field has.
         value: u32,
     },
     /// A tile does not match the header; `index` is the tile number.
     BadTile {
+        /// Index of the tile that is malformed.
         index: usize,
+        /// The part of the tile that is malformed.
         field: &'static str,
     },
     /// The RGBA size does not match the layout.
     SizeMismatch {
+        /// Width of the RGBA buffer.
         width: usize,
+        /// Height of the RGBA buffer.
         height: usize,
+        /// Width the header expects.
         expected_width: usize,
+        /// Height the header expects.
         expected_height: usize,
     },
+    /// The archive has no entries.
     NoEntries,
 }
 
@@ -144,21 +173,32 @@ impl From<hunex_mzx::Error> for Error {
 /// The header of an image archive.
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct Layout {
+    /// Width of the canvas in pixels, as stored in the header.
     pub canvas_width: usize,
+    /// Height of the canvas in pixels, as stored in the header.
     pub canvas_height: usize,
+    /// Width of one tile in pixels.
     pub tile_width: usize,
+    /// Height of one tile in pixels.
     pub tile_height: usize,
+    /// Number of tile columns.
     pub across: usize,
+    /// Number of tile rows.
     pub down: usize,
+    /// Bitmap type: 0x0C for tiles, 0x01 for font atlases.
     pub bitmap_type: u8,
+    /// Depth byte. Zero in every sample.
     pub depth: u8,
+    /// Crop byte, kept as read. Its meaning is not known.
     pub crop: usize,
+    /// Flags byte, kept as read. It is 1 in every sample.
     pub flags: u8,
     /// One value per tile, row-major: 0 all transparent, 2 all opaque, 1 mixed.
     pub transparency: Vec<u8>,
 }
 
 impl Layout {
+    /// Number of tiles: `across` times `down`.
     pub fn tiles(&self) -> usize {
         self.across * self.down
     }
@@ -244,9 +284,13 @@ pub fn parse_header(entry: &[u8]) -> Result<Layout, Error> {
 /// A decoded image: RGBA, row-major, `width * height * 4` bytes.
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct Image {
+    /// The header of the image.
     pub layout: Layout,
+    /// Width of the image in pixels.
     pub width: usize,
+    /// Height of the image in pixels.
     pub height: usize,
+    /// Pixels as RGBA, four bytes per pixel, row by row.
     pub rgba: Vec<u8>,
 }
 
@@ -479,10 +523,14 @@ pub fn encode_mzp(
 /// What `encode_like` re-encoded: a tile that has at least one changed pixel.
 #[derive(Debug, Clone, PartialEq)]
 pub struct TileReport {
+    /// Index of the tile.
     pub index: usize,
+    /// Pixels the caller changed in this tile.
     pub changed_pixels: usize,
-    pub colours: usize,
-    pub quantised: bool,
+    /// Distinct colors in the tile after the change.
+    pub colors: usize,
+    /// True when the tile had more than 256 colors and was quantized.
+    pub quantized: bool,
     /// The largest per-channel difference between the intended tile and the stored one.
     pub max_error: u8,
     /// The mean per-channel difference over the whole tile.
@@ -492,7 +540,7 @@ pub struct TileReport {
 /// Encodes an image against the entries of its original archive. A pixel that equals the original
 /// decoded image keeps the original tile's own pixel, so the original tile bytes are kept. Tiles
 /// with no changed pixel are copied byte for byte. A changed tile is encoded from its pixels: with
-/// an exact palette when it has 256 colours or fewer, and quantised otherwise.
+/// an exact palette when it has 256 colors or fewer, and quantized otherwise.
 pub fn encode_like(
     rgba: &[u8],
     width: usize,
@@ -575,8 +623,8 @@ pub fn encode_like(
             reports.push(TileReport {
                 index,
                 changed_pixels: changed,
-                colours: distinct.len(),
-                quantised: distinct.len() > PALETTE_ENTRIES,
+                colors: distinct.len(),
+                quantized: distinct.len() > PALETTE_ENTRIES,
                 max_error,
                 mean_error: error_sum as f64 / (intended.len() * 4) as f64,
             });
@@ -642,7 +690,7 @@ fn encode_tile(
 }
 
 /// Encodes one tile from all of its pixels, with alpha already in the decodable set. The palette
-/// is exact when the tile has 256 colours or fewer; the transparency byte covers the whole tile.
+/// is exact when the tile has 256 colors or fewer; the transparency byte covers the whole tile.
 fn encode_tile_pixels(layout: &Layout, pixels: &[[u8; 4]]) -> (Vec<u8>, u8) {
     let (tile_width, tile_height) = (layout.tile_width, layout.tile_height);
     let (palette, indices) = build_palette(pixels);
@@ -747,8 +795,8 @@ fn encode_atlas(rgba: &[u8], template: &Layout) -> Result<Vec<Vec<u8>>, Error> {
     Ok(vec![header, hunex_mzx::compress(&indices)])
 }
 
-/// Builds a palette of at most 256 colours for the pixels, and maps each pixel to it. Exact when
-/// there are at most 256 distinct colours; otherwise a median cut, which is lossy.
+/// Builds a palette of at most 256 colors for the pixels, and maps each pixel to it. Exact when
+/// there are at most 256 distinct colors; otherwise a median cut, which is lossy.
 fn build_palette(pixels: &[[u8; 4]]) -> (Vec<[u8; 4]>, Vec<u8>) {
     let mut first_seen: Vec<[u8; 4]> = Vec::new();
     let mut counts: BTreeMap<[u8; 4], usize> = BTreeMap::new();
@@ -769,21 +817,21 @@ fn build_palette(pixels: &[[u8; 4]]) -> (Vec<[u8; 4]>, Vec<u8>) {
         return (first_seen, mapped);
     }
     let palette = median_cut(&first_seen, &counts);
-    let mapped_colours: BTreeMap<[u8; 4], u8> = first_seen
+    let mapped_colors: BTreeMap<[u8; 4], u8> = first_seen
         .iter()
-        .map(|colour| (*colour, nearest(&palette, colour)))
+        .map(|color| (*color, nearest(&palette, color)))
         .collect();
-    let mapped = pixels.iter().map(|pixel| mapped_colours[pixel]).collect();
+    let mapped = pixels.iter().map(|pixel| mapped_colors[pixel]).collect();
     (palette, mapped)
 }
 
-fn nearest(palette: &[[u8; 4]], colour: &[u8; 4]) -> u8 {
+fn nearest(palette: &[[u8; 4]], color: &[u8; 4]) -> u8 {
     let mut best = 0usize;
     let mut best_distance = u64::MAX;
     for (index, entry) in palette.iter().enumerate() {
         let distance: u64 = (0..4)
             .map(|channel| {
-                let difference = i64::from(entry[channel]) - i64::from(colour[channel]);
+                let difference = i64::from(entry[channel]) - i64::from(color[channel]);
                 (difference * difference) as u64
             })
             .sum();
@@ -795,8 +843,8 @@ fn nearest(palette: &[[u8; 4]], colour: &[u8; 4]) -> u8 {
     best as u8
 }
 
-fn median_cut(colours: &[[u8; 4]], counts: &BTreeMap<[u8; 4], usize>) -> Vec<[u8; 4]> {
-    let mut boxes: Vec<Vec<[u8; 4]>> = vec![colours.to_vec()];
+fn median_cut(colors: &[[u8; 4]], counts: &BTreeMap<[u8; 4], usize>) -> Vec<[u8; 4]> {
+    let mut boxes: Vec<Vec<[u8; 4]>> = vec![colors.to_vec()];
     while boxes.len() < PALETTE_ENTRIES {
         let mut choice = None;
         let mut widest = 0u32;
@@ -822,8 +870,8 @@ fn median_cut(colours: &[[u8; 4]], counts: &BTreeMap<[u8; 4], usize>) -> Vec<[u8
         let total: usize = cube.iter().map(|c| counts[c]).sum();
         let mut running = 0usize;
         let mut split = cube.len() - 1;
-        for (position, colour) in cube.iter().enumerate() {
-            running += counts[colour];
+        for (position, color) in cube.iter().enumerate() {
+            running += counts[color];
             if running * 2 >= total {
                 split = (position + 1).min(cube.len() - 1);
                 break;

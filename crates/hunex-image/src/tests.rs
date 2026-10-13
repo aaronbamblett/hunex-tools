@@ -1,11 +1,11 @@
 use super::*;
 use alloc::vec;
 
-fn synthetic(width: usize, height: usize, colour: impl Fn(usize, usize) -> [u8; 4]) -> Vec<u8> {
+fn synthetic(width: usize, height: usize, color: impl Fn(usize, usize) -> [u8; 4]) -> Vec<u8> {
     let mut rgba = Vec::with_capacity(width * height * 4);
     for y in 0..height {
         for x in 0..width {
-            rgba.extend_from_slice(&colour(x, y));
+            rgba.extend_from_slice(&color(x, y));
         }
     }
     rgba
@@ -50,7 +50,7 @@ fn default_layout_matches_the_sample_grids() {
 }
 
 #[test]
-fn few_colours_round_trip_exactly() {
+fn few_colors_round_trip_exactly() {
     let (width, height) = (300, 200);
     let rgba = synthetic(width, height, |x, y| match (x / 50 + y / 40) % 3 {
         0 => [10, 20, 30, 255],
@@ -97,7 +97,7 @@ fn template_keeps_the_header_and_requires_the_same_size() {
 }
 
 #[test]
-fn many_colours_quantise_within_the_palette_and_stay_close() {
+fn many_colors_quantize_within_the_palette_and_stay_close() {
     let (width, height) = (512, 256);
     let rgba = synthetic(width, height, |x, y| {
         let v = (x * 31 + y * 17) % 997;
@@ -172,7 +172,7 @@ fn bad_headers_and_tiles_are_rejected() {
 }
 
 #[test]
-fn atlas_round_trips_exactly_within_256_colours() {
+fn atlas_round_trips_exactly_within_256_colors() {
     let template = Layout {
         canvas_width: 1024,
         canvas_height: 1024,
@@ -256,7 +256,7 @@ fn like_keeps_unchanged_tiles_and_re_encodes_only_the_touched_ones() {
     }
     let reported: Vec<usize> = reports.iter().map(|r| r.index).collect();
     assert_eq!(reported, touched);
-    assert!(reports.iter().all(|r| !r.quantised && r.max_error == 0));
+    assert!(reports.iter().all(|r| !r.quantized && r.max_error == 0));
     let refs: Vec<&[u8]> = changed.iter().map(Vec::as_slice).collect();
     let decoded = decode(&refs).unwrap();
     assert!(

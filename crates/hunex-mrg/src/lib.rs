@@ -7,7 +7,16 @@
 //!
 //! Entry data is read as whole sectors, so an entry's slice can end in padding; the formats
 //! inside (NXX wrappers, MZP containers, JPG and PNG files) carry their own lengths.
+//!
+//! ```
+//! // One index row (start sector 0, one sector on disk, one decompressed) and the end marker row.
+//! let hed = [0, 0, 0, 0, 1, 0, 1, 0, 0xFF, 0xFF, 0xFF, 0xFF, 0, 0, 0, 0];
+//! let rows = hunex_mrg::parse_index(&hed).unwrap();
+//! assert_eq!(rows.len(), 1);
+//! assert_eq!(rows[0].start_sector, 0);
+//! ```
 
+#![warn(missing_docs)]
 #![no_std]
 
 extern crate alloc;
@@ -19,21 +28,30 @@ use alloc::string::String;
 use alloc::vec::Vec;
 use core::fmt;
 
+/// Size of one sector in bytes. Entry data starts on sector boundaries.
 pub const SECTOR: usize = 2048;
+/// The value that ends the index: an index row whose start sector is this value.
 pub const TERMINATOR: u32 = 0xFFFF_FFFF;
+/// Size of one name row in the `.nam` file, in bytes.
 pub const NAME_ROW: usize = 32;
+/// Length of the name in a name row, not counting the line ending.
 pub const NAME_LEN: usize = 30;
+/// Name of the placeholder entry that stands for an empty slot.
 pub const PLACEHOLDER: &str = "NOFILE.EXISTS";
 
+/// Errors from reading an MRG set.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum Error {
+    /// The index or name table ends before the field at `offset`.
     Truncated {
+        /// Byte offset where the data ends.
         offset: usize,
     },
     /// The index ends without a terminator row.
     NoTerminator,
     /// An entry's sectors run past the end of the data file.
     EntryPastEnd {
+        /// Index of the entry that is not valid.
         index: usize,
     },
 }
@@ -55,12 +73,16 @@ impl core::error::Error for Error {}
 /// One index row.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub struct Row {
+    /// First sector of the entry's data in the `.mrg` file.
     pub start_sector: u32,
+    /// Sectors the entry occupies on disk.
     pub on_disk_sectors: u16,
+    /// Sectors the entry occupies after decompression, as recorded in the index.
     pub decompressed_sectors: u16,
 }
 
 impl Row {
+    /// True for an empty slot: all three fields are zero.
     pub fn is_empty(&self) -> bool {
         self.start_sector == 0 && self.on_disk_sectors == 0 && self.decompressed_sectors == 0
     }
@@ -89,6 +111,7 @@ pub enum Kind {
     Raw,
 }
 
+/// Classifies the data of an entry by its first bytes.
 pub fn kind(data: &[u8]) -> Kind {
     if data.is_empty() {
         Kind::Empty
@@ -104,14 +127,18 @@ pub fn kind(data: &[u8]) -> Kind {
 /// One entry of a set.
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct Entry<'a> {
+    /// Position of the entry in the index.
     pub index: usize,
+    /// Name from the `.nam` file, or `None` when the name table is missing.
     pub name: Option<String>,
+    /// The index row of the entry.
     pub row: Row,
     /// The entry's sectors, or an empty slice for an empty slot.
     pub data: &'a [u8],
 }
 
 impl Entry<'_> {
+    /// True when the entry is the placeholder for an empty slot.
     pub fn is_placeholder(&self) -> bool {
         self.name.as_deref() == Some(PLACEHOLDER)
     }
@@ -120,6 +147,7 @@ impl Entry<'_> {
 /// An opened set.
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct Set<'a> {
+    /// The entries in index order.
     pub entries: Vec<Entry<'a>>,
 }
 
@@ -190,8 +218,11 @@ pub fn open<'a>(hed: &[u8], mrg: &'a [u8], nam: Option<&[u8]>) -> Result<Set<'a>
 /// entry by entry.
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct Meta {
+    /// Position of the entry in the index.
     pub index: usize,
+    /// Name from the `.nam` file, or `None` when the name table is missing.
     pub name: Option<String>,
+    /// The index row of the entry.
     pub row: Row,
 }
 

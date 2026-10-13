@@ -1,12 +1,12 @@
 # Text form (asm format)
 
-`hunex chs dump --asm` writes this form and `hunex chs asm` reads it. Any file dumped and assembled again gives the same bytes. The examples here are synthetic.
+## Overview
 
-## Lines
+`hunex chs dump --asm` writes the text form of a `.chs` script, and `hunex chs asm` reads it. Checked on sample files: each of the 250 sample scripts, dumped and assembled again, gives the same bytes. The examples here are synthetic.
+
+## Layout
 
 Each line holds one statement. Blank lines are ignored. A line whose first non-blank character is `#` is a comment. Tokens are separated by spaces or tabs; a quoted string may contain spaces.
-
-## Directives
 
 | Directive | Meaning |
 |---|---|
@@ -20,11 +20,11 @@ Each line holds one statement. Blank lines are ignored. A line whose first non-b
 
 Every `header_size` must equal 8 plus the include names (each with its NUL) plus the padding bytes. The assembler checks this.
 
-## Labels
+### Labels
 
 `L_0000:` defines a label on the next instruction. A label placed after the last instruction labels the end of the code. Label names start with `L_` and must be unique.
 
-## Instructions
+### Instructions
 
 An instruction is an opcode followed by its operands:
 
@@ -37,11 +37,11 @@ An instruction is an opcode followed by its operands:
 
 Operand counts follow the opcode table. Any other operand kind is an error.
 
-## Strings and escapes
+### Strings and escapes
 
 Quoted text escapes `\n`, `\r`, `\t`, `\\`, `\"` and `\xNN` (two hex digits, any byte). Text that is valid UTF-8 is written as is; any other byte is written as `\xNN`. Raw control characters inside quotes are errors. A string may not contain a NUL byte, even as `\x00`, because pool entries end with a NUL.
 
-## Editing rules
+## Encoding rules
 
 - New strings go in `string new` entries or as quoted operands. They are written after the original entries, and only if code references them.
 - A string referenced only by a 0x7B operand cannot be the pool start: the decoder finds the pool start from 0x03 and 0x7F pointers alone. Lowering fails with an error when that would happen (`NoStringAnchor` or `PointerBeforePool` in the library).
@@ -51,7 +51,7 @@ Quoted text escapes `\n`, `\r`, `\t`, `\\`, `\"` and `\xNN` (two hex digits, any
 - The code must end with a return (0x1B).
 - Pointers are recomputed on lowering. A pointer that is not a label or string operand is not moved.
 
-## Pool layout
+### Pool layout
 
 When the script is lowered, the pool is written in this order:
 
@@ -61,7 +61,7 @@ When the script is lowered, the pool is written in this order:
 
 Entries before the first referenced original string are dropped, and unreferenced new strings are dropped. This keeps the decoder's pool-start rule valid: the first pool entry is always a referenced string.
 
-## Example
+### Example
 
 ```text
 format hunex
@@ -74,3 +74,11 @@ L_0000:
     Return
 string S_0000 "example"
 ```
+
+## What the game accepts
+
+The text form is a tool format. What the game accepts is the `.chs` output, covered in [chs-format.md](chs-format.md#what-the-game-accepts).
+
+## Known unknowns
+
+- The text form does not carry any operand meaning beyond the opcode table, so edits that change an opcode's meaning are not detected.

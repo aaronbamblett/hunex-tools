@@ -1,8 +1,8 @@
-//! Keeps docs/opcodes.md equal to the opcode table. Run with HUNEX_UPDATE_DOCS=1 to rewrite it.
+//! Keeps docs/formats/opcodes.md equal to the opcode table. Run with HUNEX_UPDATE_DOCS=1 to rewrite it.
 
 use hunex_chs::OPCODES;
 
-const DOC: &str = concat!(env!("CARGO_MANIFEST_DIR"), "/../../docs/opcodes.md");
+const DOC: &str = concat!(env!("CARGO_MANIFEST_DIR"), "/../../docs/formats/opcodes.md");
 
 fn render() -> String {
     let base = OPCODES.iter().filter(|info| info.id < 0x100).count();
@@ -39,12 +39,12 @@ fn render() -> String {
 #[test]
 fn opcodes_doc_matches_table() {
     if !std::path::Path::new(DOC).exists() {
-        eprintln!("docs/opcodes.md is not in this package; skipping");
+        eprintln!("docs/formats/opcodes.md is not in this package; skipping");
         return;
     }
     let rendered = render();
     if std::env::var_os("HUNEX_UPDATE_DOCS").is_some() {
-        std::fs::write(DOC, &rendered).expect("write docs/opcodes.md");
+        std::fs::write(DOC, &rendered).expect("write docs/formats/opcodes.md");
         return;
     }
     let on_disk = std::fs::read_to_string(DOC)
@@ -52,6 +52,6 @@ fn opcodes_doc_matches_table() {
         .replace("\r\n", "\n");
     assert!(
         on_disk == rendered,
-        "docs/opcodes.md is out of date; run HUNEX_UPDATE_DOCS=1 cargo test -p hunex-chs --test opcodes_doc"
+        "docs/formats/opcodes.md is out of date; run HUNEX_UPDATE_DOCS=1 cargo test -p hunex-chs --test opcodes_doc"
     );
 }

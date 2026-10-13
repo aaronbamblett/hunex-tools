@@ -9,7 +9,19 @@
 //! exactly there. A crafted file whose smallest pointer targets a return in the middle of the
 //! code is accepted, and the code after that return is treated as pool. Real files cannot be
 //! told apart from that case, and the exe has no explicit code length either.
+//!
+//! ```
+//! // A script with no strings: the magic, a header size of 8, no includes, then one return.
+//! let mut bytes = b"HunexCompiledScriptVer1.00\0".to_vec();
+//! bytes.extend_from_slice(&8u32.to_le_bytes());
+//! bytes.extend_from_slice(&0u32.to_le_bytes());
+//! bytes.extend_from_slice(&0x1Bu32.to_le_bytes());
+//! let script = hunex_chs::Script::parse(&bytes).unwrap();
+//! assert_eq!(script.encode(), bytes);
+//! assert_eq!(script.lift().unwrap().lower().unwrap().encode(), bytes);
+//! ```
 
+#![warn(missing_docs)]
 #![no_std]
 
 extern crate alloc;
@@ -38,9 +50,12 @@ const OP_DEBUG: u32 = 0x7F;
 const MAX_OPERANDS: usize = 3;
 const HEADER_FIELDS_SIZE: usize = 8;
 
+/// The two script formats. They differ in their magic bytes.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum Format {
+    /// The Hunex format, with the `HUNEX` magic.
     Hunex,
+    /// The Buriko format, with its own magic.
     Buriko,
 }
 
@@ -53,6 +68,7 @@ impl Format {
     }
 }
 
+/// One instruction: its byte offset, its opcode and its dword operands.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub struct Instruction {
     offset: usize,
@@ -62,23 +78,28 @@ pub struct Instruction {
 }
 
 impl Instruction {
+    /// Byte offset of the instruction in the file.
     pub fn offset(&self) -> usize {
         self.offset
     }
 
+    /// The opcode, the first dword of the instruction.
     pub fn opcode(&self) -> u32 {
         self.opcode
     }
 
+    /// The operands that follow the opcode, in file order.
     pub fn operands(&self) -> &[u32] {
         &self.operands[..usize::from(self.operand_count)]
     }
 
+    /// Size of the instruction in bytes: four bytes for the opcode and four for each operand.
     pub fn size(&self) -> usize {
         4 * (1 + usize::from(self.operand_count))
     }
 }
 
+/// A parsed script. The code is a list of instructions and the string pool is the bytes after them.
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct Script {
     format: Format,
@@ -91,16 +112,53 @@ pub struct Script {
     pool: Vec<u8>,
 }
 
+/// Errors from reading a script file.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum Error {
+    /// The file does not start with a known magic.
     BadMagic,
-    Truncated { offset: usize },
-    BadHeader { offset: usize },
-    UnregisteredOpcode { offset: usize, opcode: u32 },
-    PoolBoundary { offset: usize },
-    BadStringOperand { offset: usize, value: u32 },
-    BadCodePointer { offset: usize, value: u32 },
-    InvalidUtf8 { offset: usize },
+    /// The data ends before the field at `offset`.
+    Truncated {
+        /// Byte offset where the data ends.
+        offset: usize,
+    },
+    /// A header field has a value this crate does not accept.
+    BadHeader {
+        /// Byte offset of the bad header field.
+        offset: usize,
+    },
+    /// An instruction uses an opcode that is not in the opcode table.
+    UnregisteredOpcode {
+        /// Byte offset of the instruction.
+        offset: usize,
+        /// The opcode that is not in the table.
+        opcode: u32,
+    },
+    /// The code runs into the string pool at `offset`.
+    PoolBoundary {
+        /// Byte offset of the pool boundary.
+        offset: usize,
+    },
+    /// A string operand does not point at a valid string.
+    BadStringOperand {
+        /// Byte offset of the instruction.
+        offset: usize,
+        /// The operand that is not a valid string pointer.
+        value: u32,
+    },
+    /// A code operand does not point at an instruction.
+    BadCodePointer {
+        /// Byte offset of the instruction.
+        offset: usize,
+        /// The operand that is not a valid code pointer.
+        value: u32,
+    },
+    /// A string is not valid UTF-8.
+    InvalidUtf8 {
+        /// Parses a script file. The file must start with a known magic and have a valid header.
+        /// Byte offset of the string.
+        offset: usize,
+    },
 }
 
 impl fmt::Display for Error {
@@ -132,6 +190,7 @@ impl fmt::Display for Error {
 impl core::error::Error for Error {}
 
 impl Script {
+    /// Parses a script file. The file must start with a known magic and have a valid header.
     pub fn parse(bytes: &[u8]) -> Result<Script, Error> {
         let (format, magic) = if bytes.starts_with(HUNEX_MAGIC) {
             (Format::Hunex, HUNEX_MAGIC)
@@ -260,18 +319,22 @@ impl Script {
         out
     }
 
+    /// Index of the instruction that starts at `offset`, or `None` when no instruction starts there.
     pub fn format(&self) -> Format {
         self.format
     }
 
+    /// The header size field, in bytes.
     pub fn header_size(&self) -> u32 {
         self.header_size
     }
 
+    /// Byte offset where the code starts.
     pub fn code_base(&self) -> usize {
         self.code_base
     }
 
+    /// The include names, in file order.
     pub fn includes(&self) -> &[Vec<u8>] {
         &self.includes
     }
@@ -281,6 +344,7 @@ impl Script {
         &self.header_padding
     }
 
+    /// Byte offset where the string pool starts.
     pub fn string_pool_start(&self) -> usize {
         self.string_pool_start
     }
@@ -290,16 +354,19 @@ impl Script {
         &self.pool
     }
 
+    /// The instructions in file order.
     pub fn instructions(&self) -> &[Instruction] {
         &self.instructions
     }
 
+    /// Index of the instruction that starts at `offset`, or `None` when no instruction starts there.
     pub fn instruction_index_at(&self, offset: usize) -> Option<usize> {
         self.instructions
             .binary_search_by_key(&offset, |instruction| instruction.offset)
             .ok()
     }
 
+    /// The raw bytes of the string that the instruction points at, without the terminating zero.
     pub fn string_bytes(&self, instruction: &Instruction) -> Result<&[u8], Error> {
         let value = instruction.operands().first().copied().unwrap_or(0);
         let bad = Error::BadStringOperand {
@@ -314,6 +381,7 @@ impl Script {
         Ok(&self.pool[range])
     }
 
+    /// The string that the instruction points at, decoded as UTF-8.
     pub fn string(&self, instruction: &Instruction) -> Result<&str, Error> {
         let bytes = self.string_bytes(instruction)?;
         core::str::from_utf8(bytes).map_err(|_| Error::InvalidUtf8 {

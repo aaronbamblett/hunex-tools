@@ -2,8 +2,11 @@
 /// and a mnemonic where the specs give one.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub struct OpcodeInfo {
+    /// The opcode id.
     pub id: u32,
+    /// The number of dword operands that follow the opcode.
     pub operands: usize,
+    /// The name from the specs, or `None` when the specs do not name it.
     pub mnemonic: Option<&'static str>,
 }
 
@@ -801,6 +804,7 @@ pub const OPCODES: &[OpcodeInfo] = &[
     },
 ];
 
+/// Looks up an opcode by id. Returns `None` for an id that is not registered.
 pub fn opcode_info(id: u32) -> Option<&'static OpcodeInfo> {
     OPCODES
         .binary_search_by_key(&id, |info| info.id)

@@ -7,4 +7,4 @@ Reader and writer for the glyph tables (`.ccit`) of the HuneX engine. A decompre
 - `Table::insert` adds a glyph at the next index; `Table::replace` changes the coordinates of an existing glyph.
 - `cell_of` gives the atlas page and cell origin of an index.
 
-Part of the [hunex-tools](https://github.com/aaronbamblett/hunex-tools) project. Unofficial; not affiliated with HuneX or TYPE-MOON. The crate does not include any game data.
+Part of the [hunex-tools](https://github.com/aaronbamblett/hunex-tools) project. Unofficial; not affiliated with HuneX. The crate does not include any game data.

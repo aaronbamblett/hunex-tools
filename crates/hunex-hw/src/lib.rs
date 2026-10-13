@@ -4,7 +4,13 @@
 //! u32 payload length (file size minus 0x40), the total sample frames (the granule of the last
 //! Ogg page), the sample rate, the channel count, and 40 zero bytes. The payload is an Ogg
 //! Vorbis stream, byte for byte.
+//!
+//! ```
+//! // A `.hw` file must carry an Ogg Vorbis payload, so an empty header is rejected.
+//! assert!(hunex_hw::Hw::parse(&[0u8; 64]).is_err());
+//! ```
 
+#![warn(missing_docs)]
 #![no_std]
 
 extern crate alloc;
@@ -17,37 +23,54 @@ use core::fmt;
 
 use hunex_ogg::{first_packet, pages, Error as OggError, NO_GRANULE};
 
+/// Size of the `.hw` header in bytes.
 pub const HEADER_SIZE: usize = 0x40;
+/// The four-byte tag at the start of the header: `hw` and two spaces.
 pub const TAG: &[u8; 4] = b"hw  ";
 
 const VORBIS_ID_LENGTH: usize = 30;
 
+/// Errors from reading a `.hw` file.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum Error {
+    /// The file ends before the field at `offset`.
     Truncated {
+        /// Byte offset where the data ends.
         offset: usize,
     },
+    /// The header length field is not 0x40.
     BadHeaderLength {
+        /// The length the header states.
         found: u32,
     },
+    /// The file does not start with the `hw` tag.
     BadTag,
+    /// The payload length in the header does not match the file.
     BadPayloadLength {
+        /// The payload length the header states.
         stored: u32,
+        /// The payload length in the file.
         actual: u32,
     },
+    /// The header padding is not zero.
     NonZeroPadding {
+        /// Byte offset of the first non-zero padding byte.
         offset: usize,
     },
     /// The payload's first packet is not a Vorbis identification header.
     NotVorbis,
+    /// The payload's Vorbis identification header is missing or malformed.
     BadIdentification,
     /// The last Ogg page has no granule, or one too large for the header.
     BadGranule,
     /// The header field does not match the Ogg data. `field` names it.
     HeaderMismatch {
+        /// A header field has a value that cannot be written.
         field: &'static str,
     },
+    /// The payload is too large for the header's 32-bit length.
     TooLarge,
+    /// The Ogg layer reported an error.
     Ogg(OggError),
 }
 
@@ -92,16 +115,22 @@ impl From<OggError> for Error {
 /// Facts read from an Ogg Vorbis stream.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub struct VorbisInfo {
+    /// Number of audio channels.
     pub channels: u8,
+    /// Sample rate in hertz.
     pub sample_rate: u32,
+    /// Length of the stream in sample frames, from the last page's granule position.
     pub sample_frames: u32,
 }
 
 /// A parsed `.hw` file. The payload is borrowed from the input.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub struct Hw<'a> {
+    /// Length of the stream in sample frames, as stored in the header.
     pub sample_frames: u32,
+    /// Sample rate in hertz, as stored in the header.
     pub sample_rate: u32,
+    /// Number of audio channels, as stored in the header.
     pub channels: u32,
     payload: &'a [u8],
 }

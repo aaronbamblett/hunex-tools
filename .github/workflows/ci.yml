@@ -26,7 +26,9 @@ jobs:
       - name: clippy
         run: cargo clippy --workspace --all-targets -- -D warnings
       - name: test
-        run: cargo test --workspace
+        run: cargo test --workspace --no-fail-fast
+      - name: doctests
+        run: cargo test --doc --workspace --no-fail-fast
       - name: wasm (unknown)
         run: cargo build -p hunex-chs --target wasm32-unknown-unknown
       - name: wasm (wasip2)
@@ -55,3 +57,20 @@ jobs:
         run: cargo build -p hunex-ccit --target wasm32-unknown-unknown
       - name: wasm ccit (wasip2)
         run: cargo build -p hunex-ccit --target wasm32-wasip2
+      - name: wasm cbg (unknown)
+        run: cargo build -p hunex-cbg --target wasm32-unknown-unknown
+      - name: wasm cbg (wasip2)
+        run: cargo build -p hunex-cbg --target wasm32-wasip2
+
+  docs:
+    name: docs and links
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@1.96
+      - name: strict rustdoc
+        env:
+          RUSTDOCFLAGS: -D warnings
+        run: cargo doc --workspace --no-deps
+      - name: relative links
+        run: python3 scripts/check_links.py

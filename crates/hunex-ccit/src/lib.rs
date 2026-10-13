@@ -8,7 +8,16 @@
 //!
 //! [`Table::parse`] reads a table exactly, and [`Table::to_bytes`] writes it back byte for byte.
 //! [`Table::insert`] and [`Table::replace`] change a parsed table and keep it in that order.
+//!
+//! ```
+//! use hunex_ccit::{Record, Table};
+//!
+//! let table = Table::from_parts(vec![Record { code: 0x41, index: 0 }], None).unwrap();
+//! let bytes = table.to_bytes();
+//! assert!(Table::parse(&bytes).unwrap().find('A').is_some());
+//! ```
 
+#![warn(missing_docs)]
 #![no_std]
 
 extern crate alloc;
@@ -29,32 +38,44 @@ pub const CELL_SIZE: u32 = 73;
 /// One character record.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub struct Record {
+    /// Character code: the UTF-8 bytes of the character read as one big-endian integer.
     pub code: u32,
+    /// Glyph index. Indices are 0 to N-1 with no repeats.
     pub index: u32,
 }
 
 /// The atlas position of one glyph: page, and the pixel rectangle of its cell.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub struct Coord {
+    /// Atlas page the glyph is on (index / 98).
     pub page: u32,
+    /// Left edge of the glyph's box in the atlas page, in pixels.
     pub x: u32,
+    /// Top edge of the glyph's box in the atlas page, in pixels.
     pub y: u32,
+    /// Width of the glyph's ink box. Used as the advance when drawing text.
     pub width: u32,
+    /// Height of the glyph's box in pixels. The samples use 73.
     pub height: u32,
 }
 
 /// A record and its coordinates, when the table has them.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub struct Glyph {
+    /// The record of the glyph.
     pub record: Record,
+    /// The coordinates, or `None` for a table without them.
     pub coord: Option<Coord>,
 }
 
 /// Where a glyph index sits in the atlas grid: the page and the cell origin in pixels.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub struct Cell {
+    /// Atlas page.
     pub page: u32,
+    /// Left edge in pixels.
     pub x: u32,
+    /// Top edge in pixels.
     pub y: u32,
 }
 
@@ -92,17 +113,46 @@ pub fn char_of(code: u32) -> Option<char> {
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum Error {
     /// The bytes end before the field at `offset`.
-    Truncated { offset: usize },
+    Truncated {
+        /// Byte offset of the missing data.
+        offset: usize,
+    },
+    /// found: The size the header states.
     /// The record size in the header is not 8.
-    RecordSize { found: u32 },
+    RecordSize {
+        /// glyphs: The glyph count in the header.
+        ///   coords: The glyph count in the coordinate block.
+        /// The size the header states.
+        found: u32,
+    },
+    /// expected: The length the header implies.
+    ///   found: The length of the file.
     /// The coordinate record size is not 20.
-    CoordSize { found: u32 },
+    CoordSize {
+        /// The size the header states.
+        found: u32,
+    },
     /// The coordinate block declares a different glyph count from the header.
-    CoordCount { glyphs: u32, coords: u32 },
+    CoordCount {
+        /// The glyph count in the header.
+        glyphs: u32,
+        /// The glyph count in the coordinate block.
+        coords: u32,
+    },
     /// The coordinate block is not the zero word, or the table is not exactly its length.
-    Layout { expected: usize, found: usize },
+    /// The table is not exactly the length its header implies.
+    Layout {
+        /// The length the header implies.
+        expected: usize,
+        /// The length of the file.
+        found: usize,
+    },
     /// Two records share a code.
-    DuplicateCode { code: u32 },
+    /// Two records share this code.
+    DuplicateCode {
+        /// The code that appears twice.
+        code: u32,
+    },
     /// The records are not in code order.
     Unsorted,
     /// The indices are not 0 to N-1 with no repeats.
@@ -110,7 +160,10 @@ pub enum Error {
     /// Coordinates were given for a table without them, or left out for one with them.
     CoordsMismatch,
     /// No record has this code.
-    NoSuchCode { code: u32 },
+    NoSuchCode {
+        /// The code that was asked for.
+        code: u32,
+    },
 }
 
 impl fmt::Display for Error {

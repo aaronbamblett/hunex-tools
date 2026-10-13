@@ -4,7 +4,14 @@
 //! entry offset from the start of the data), the sector span of the entry, and the low 16 bits
 //! of its size. The size is the one value that matches both the low bits and the span.
 //! Entries follow each other, and each is padded with 0xFF to the next 8-byte boundary.
+//!
+//! ```
+//! let file = hunex_mzp::write(&[b"first", b"second entry"]).unwrap();
+//! let container = hunex_mzp::parse(&file).unwrap();
+//! assert_eq!(container.entries, vec![&b"first"[..], b"second entry"]);
+//! ```
 
+#![warn(missing_docs)]
 #![no_std]
 
 extern crate alloc;
@@ -15,26 +22,35 @@ mod tests;
 use alloc::vec::Vec;
 use core::fmt;
 
+/// The magic that starts every container: `mrgd00`.
 pub const MAGIC: &[u8; 6] = b"mrgd00";
+/// The sector size in bytes. An entry's offset is its sector times this, plus its byte within the sector.
 pub const SECTOR: usize = 0x800;
 const HEADER: usize = 8;
 const RECORD: usize = 8;
 const PAD_BYTE: u8 = 0xFF;
 
+/// Errors from reading or writing an MZP container.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum Error {
+    /// The file does not start with `mrgd00`.
     BadMagic,
+    /// The data ends before the field at `offset`.
     Truncated {
+        /// Byte offset of the missing data.
         offset: usize,
     },
     /// No entry size fits the record's low bits and span.
     BadSize {
+        /// No entry size fits the record's low bits and sector span.
         index: usize,
     },
     /// More than one entry size fits the record.
     AmbiguousSize {
+        /// More than one entry size fits the record.
         index: usize,
     },
+    /// The container has more entries or sectors than its 16-bit fields hold.
     TooLarge,
 }
 
@@ -57,6 +73,7 @@ impl core::error::Error for Error {}
 /// Entries of a container, borrowed from the input.
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct Container<'a> {
+    /// The entry data, borrowed from the input in container order.
     pub entries: Vec<&'a [u8]>,
 }
 
@@ -132,7 +149,9 @@ fn parse_with(bytes: &[u8], switch_rule: bool) -> Result<Container<'_>, Error> {
 /// One entry's place in a container: its offset from the start of the data and its size.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub struct Span {
+    /// Offset of the entry's data from the start of the data area.
     pub offset: u64,
+    /// Size of the entry in bytes.
     pub size: usize,
 }
 

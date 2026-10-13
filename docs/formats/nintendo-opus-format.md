@@ -1,8 +1,14 @@
 # Nintendo OPUS audio and Ogg Opus remux
 
-The hunex-nopus crate reads the Nintendo OPUS files in the Switch release's `stream` folder and remuxes them to Ogg Opus (RFC 7845). The packets are not re-encoded. The description is based on our reader and on the files. It is not an official specification.
+## Overview
 
-## Basic chunk (0x20 bytes, little-endian)
+The Switch release stores its audio as Nintendo OPUS files in the RomFS `stream` folder. The `hunex-nopus` crate reads them and remuxes the packets to Ogg Opus (RFC 7845). The packets are not re-encoded. The format has no official specification.
+
+Checked on sample files: all 16,601 files parse and remux (16,468 mono and 133 stereo), and ffmpeg decodes the remuxed sample files with exit status 0.
+
+## Layout
+
+### Basic chunk (0x20 bytes, little-endian)
 
 | Offset | Size | Contents |
 |---|---|---|
@@ -18,26 +24,22 @@ The hunex-nopus crate reads the Nintendo OPUS files in the Switch release's `str
 | 0x1C | 2 | Pre-skip, in samples at 48 kHz. |
 | 0x1E | 2 | Padding; not checked. |
 
-## Data chunk (at 0x20)
+### Data chunk (at 0x20)
 
 - Chunk id 0x80000004.
 - A size counted from offset 0x28 to the end of the file. Other sizes are rejected.
 
-## Packets
+### Packets
 
-The data chunk holds packets back to back. Each packet is:
+The data chunk holds packets back to back. Each packet is a big-endian u32 length, a 4-byte field that this crate ignores, and the Opus packet, which is the length given above. A zero length, or a packet that runs past the end of the file, is an error.
 
-- a big-endian u32 length;
-- a 4-byte field that this crate ignores (its meaning is not known);
-- the Opus packet, which is the length given above.
+## Encoding rules
 
-A zero length, or a packet that runs past the end of the file, is an error.
-
-## Samples per packet
+### Samples per packet
 
 The first byte of a packet is its TOC byte (RFC 6716). The crate reads the configuration (the top five bits) to get the frame size at 48 kHz, and the code (the low two bits) to get the number of frames: one for code 0, two for codes 1 and 2, and the count in the low six bits of the second byte for code 3. A packet must have 1 to 48 frames and no more than 120 ms in total. A byte that breaks these rules is an error.
 
-## Ogg Opus remux
+### Ogg Opus remux
 
 The output is an Ogg Opus stream with one packet per page, in this order:
 
@@ -49,15 +51,13 @@ Every page has a CRC-32 (polynomial 0x04C11DB7, no reflection, initial value 0, 
 
 Only mono and stereo are accepted. Layouts this crate does not understand are reported as unsupported.
 
-## Checks on the samples
+## What the game accepts
 
-- Three named files remux with 297, 223 and 10,903 packets. Their decoded lengths are 285,000, 213,960 and 10,466,760 samples at 48 kHz, which are 5.9375 s, 4.4575 s and 218.0575 s.
-- ffmpeg decodes all three remuxed files with exit status 0.
-- All 16,601 files parse and remux. Of these, 16,468 are mono and 133 are stereo.
+Verified indirectly (2026-10-13): a Nintendo OPUS clip, remuxed with `hunex nopus to-ogg` and converted to Vorbis, plays in the game through the `.hw` test. The Ogg Opus file itself was not played.
 
-## Unknowns
+## Known unknowns
 
 - The meaning of the 4-byte field before each packet, and of header field 0x14.
 - The layout of a context (loop) chunk. No sample has one.
-- Whether the decoded audio matches the reference decoder's output bit for bit. Only ffmpeg was used.
+- Open: whether the decoded audio matches another decoder's output bit for bit. Only ffmpeg was used.
 - Channel counts above two, and other mapping families.

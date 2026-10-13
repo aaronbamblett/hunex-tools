@@ -34,16 +34,23 @@ fn is_string_slot(opcode: u32, index: usize) -> bool {
     )
 }
 
+/// Index of a label in the program's label table.
 pub type LabelId = usize;
+/// Index of a string in the program's string table.
 pub type StrId = usize;
 
+/// One operand of an item. Code and string pointers are symbolic, so lowering can recompute them.
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub enum Operand {
+    /// A plain dword that is not a pointer.
     Dword(u32),
+    /// A code pointer to the label with this id.
     Label(LabelId),
+    /// A string pointer to the string with this id.
     Str(StrId),
 }
 
+/// One instruction of a program: an opcode and its operands.
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct Item {
     opcode: u32,
@@ -51,14 +58,17 @@ pub struct Item {
 }
 
 impl Item {
+    /// Creates an item from an opcode and its operands.
     pub fn new(opcode: u32, operands: Vec<Operand>) -> Item {
         Item { opcode, operands }
     }
 
+    /// The opcode.
     pub fn opcode(&self) -> u32 {
         self.opcode
     }
 
+    /// The operands in order.
     pub fn operands(&self) -> &[Operand] {
         &self.operands
     }
@@ -112,6 +122,7 @@ pub struct PoolEntry {
 }
 
 impl PoolEntry {
+    /// Creates a pool entry. Fails when the bytes contain a NUL before the end.
     pub fn new(bytes: Vec<u8>, original: bool) -> Result<PoolEntry, EditError> {
         if bytes.contains(&0) {
             return Err(EditError::NulInString);
@@ -119,10 +130,12 @@ impl PoolEntry {
         Ok(PoolEntry { bytes, original })
     }
 
+    /// The bytes of the string, without the terminating zero.
     pub fn bytes(&self) -> &[u8] {
         &self.bytes
     }
 
+    /// True when the entry came from the file, not from an edit.
     pub fn is_original(&self) -> bool {
         self.original
     }
@@ -131,17 +144,25 @@ impl PoolEntry {
 /// Everything a [`Program`] holds, for building one directly (the assembler does this).
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct ProgramParts {
+    /// The format the file was read as.
     pub format: Format,
+    /// The header size field, in bytes.
     pub header_size: u32,
+    /// The include names, in file order.
     pub includes: Vec<Vec<u8>>,
+    /// Header bytes between the include list and the code, kept as read.
     pub header_padding: Vec<u8>,
+    /// The items in file order.
     pub items: Vec<Item>,
     /// Target item index of each label. A target equal to `items.len()` is the end of code.
     pub labels: Vec<usize>,
+    /// The string pool entries in table order.
     pub strings: Vec<PoolEntry>,
+    /// Bytes after the last string, kept as read.
     pub tail: Vec<u8>,
 }
 
+/// A script in symbolic form. Labels and string references are ids, so editing one item does not break pointers elsewhere.
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct Program {
     format: Format,
@@ -154,30 +175,47 @@ pub struct Program {
     tail: Vec<u8>,
 }
 
+/// Errors from building or editing a program.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum EditError {
+    /// The opcode is not in the opcode table.
     UnregisteredOpcode(u32),
+    /// An operand count that does not match the opcode.
     OperandCount {
+        /// The opcode whose operands are wrong.
         opcode: u32,
+        /// The operand count the opcode takes.
         expected: usize,
+        /// The operand count that was given.
         found: usize,
     },
+    /// An operand has the wrong kind for its slot.
     OperandType {
+        /// The opcode whose operand is wrong.
         opcode: u32,
+        /// Index of the operand.
         index: usize,
     },
+    /// A label operand names a label that does not exist.
     UnknownLabel(LabelId),
+    /// A string operand names a string that does not exist.
     UnknownString(StrId),
+    /// An index is past the end of its table.
     IndexOutOfRange(usize),
     /// The instruction has a label on it. Move the label with `move_label` first.
     LabelOnRemovedInstruction {
+        /// Index of the item that refers to the label.
         index: usize,
+        /// The label that the item refers to.
         label: LabelId,
     },
+    /// A string contains a NUL byte before its end.
     NulInString,
+    /// The header is not one that the lowering can write.
     BadHeader,
 }
 
+/// Errors from lowering a program back to a script.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum LowerError {
     /// The code must end with a return, because the decoder finds the pool after it.
@@ -190,7 +228,9 @@ pub enum LowerError {
     /// The first pool entry is not referenced by a 0x03 or 0x7F pointer, so the decoder would
     /// not find the pool start.
     NoStringAnchor,
+    /// A label or string reference points at nothing.
     DanglingReference,
+    /// A pointer does not fit the file's 32-bit fields.
     OutOfRange,
 }
 
@@ -248,6 +288,7 @@ impl core::error::Error for EditError {}
 impl core::error::Error for LowerError {}
 
 impl Program {
+    /// Builds a program from its parts. Checks that the labels and string references are valid.
     pub fn from_parts(parts: ProgramParts) -> Result<Program, EditError> {
         let ProgramParts {
             format,
@@ -292,22 +333,27 @@ impl Program {
         })
     }
 
+    /// The format the file was read as.
     pub fn format(&self) -> Format {
         self.format
     }
 
+    /// The header size field, in bytes.
     pub fn header_size(&self) -> u32 {
         self.header_size
     }
 
+    /// The include names, in file order.
     pub fn includes(&self) -> &[Vec<u8>] {
         &self.includes
     }
 
+    /// Header bytes between the include list and the code, kept as read.
     pub fn header_padding(&self) -> &[u8] {
         &self.header_padding
     }
 
+    /// The items in file order.
     pub fn items(&self) -> &[Item] {
         &self.items
     }
@@ -317,14 +363,17 @@ impl Program {
         &self.labels
     }
 
+    /// The string pool entries in table order.
     pub fn strings(&self) -> &[PoolEntry] {
         &self.strings
     }
 
+    /// The bytes of the string with this id, or `None` when the id is out of range.
     pub fn string(&self, id: StrId) -> Option<&[u8]> {
         self.strings.get(id).map(PoolEntry::bytes)
     }
 
+    /// Bytes after the last string, kept as read.
     pub fn tail(&self) -> &[u8] {
         &self.tail
     }
@@ -370,6 +419,7 @@ impl Program {
         Ok(self.labels.len() - 1)
     }
 
+    /// Moves a label to a different item index. Fails when the label or index does not exist.
     pub fn move_label(&mut self, label: LabelId, index: usize) -> Result<(), EditError> {
         if label >= self.labels.len() {
             return Err(EditError::UnknownLabel(label));
@@ -519,6 +569,7 @@ impl Program {
 }
 
 impl Script {
+    /// Converts a parsed script into a program, with labels and string ids in place of raw pointers.
     pub fn lift(&self) -> Result<Program, Error> {
         let code_base = self.code_base();
         let pool_start = self.string_pool_start();

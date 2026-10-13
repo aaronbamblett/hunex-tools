@@ -1,5 +1,11 @@
 //! Ogg pages: reading with CRC checks, writing with CRC computed, and first-packet access.
+//!
+//! ```
+//! assert_eq!(hunex_ogg::crc32(b""), 0);
+//! assert_eq!(hunex_ogg::crc32(b"123456789"), 0x89A1_897F);
+//! ```
 
+#![warn(missing_docs)]
 #![no_std]
 
 extern crate alloc;
@@ -10,9 +16,13 @@ mod tests;
 use alloc::vec::Vec;
 use core::fmt;
 
+/// The capture pattern that starts every Ogg page: the ASCII text `OggS`.
 pub const CAPTURE: &[u8; 4] = b"OggS";
+/// Header flag: the page continues a packet from the previous page.
 pub const FLAG_CONTINUED: u8 = 0x01;
+/// Header flag: the first page of a logical stream.
 pub const FLAG_BOS: u8 = 0x02;
+/// Header flag: the last page of a logical stream.
 pub const FLAG_EOS: u8 = 0x04;
 /// Granule position of a page that completes no packet.
 pub const NO_GRANULE: u64 = u64::MAX;
@@ -21,21 +31,32 @@ const PAGE_HEADER: usize = 27;
 const CRC_OFFSET: usize = 22;
 const MAX_SEGMENTS: usize = 255;
 
+/// Errors from reading an Ogg file.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum Error {
+    /// The page at `offset` does not start with `OggS`.
     NotOgg {
+        /// Byte offset of the page.
         offset: usize,
     },
+    /// The stream structure version is not 0.
     BadVersion {
+        /// Byte offset of the page.
         offset: usize,
     },
+    /// The page checksum does not match.
     BadChecksum {
+        /// Byte offset of the page.
         offset: usize,
     },
+    /// The data ends inside the page at `offset`.
     Truncated {
+        /// Byte offset where the data ends.
         offset: usize,
     },
+    /// Bytes remain after the last page.
     TrailingBytes {
+        /// Byte offset of the first unused byte.
         offset: usize,
     },
     /// The packets do not fit in one page (at most 255 lacing segments).
@@ -66,11 +87,17 @@ impl core::error::Error for Error {}
 /// A page of a file, borrowing its data.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub struct Page<'a> {
+    /// Header type flags: `FLAG_CONTINUED`, `FLAG_BOS` and `FLAG_EOS`.
     pub header_type: u8,
+    /// The granule position: for audio, the number of samples up to the end of the page.
     pub granule: u64,
+    /// Serial number of the logical stream the page belongs to.
     pub serial: u32,
+    /// Page sequence number within the logical stream.
     pub sequence: u32,
+    /// The segment table: the length of each packet segment on the page.
     pub segments: &'a [u8],
+    /// The page's data, the segments back to back.
     pub data: &'a [u8],
 }
 

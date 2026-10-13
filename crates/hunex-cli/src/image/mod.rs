@@ -1,4 +1,4 @@
-//! Background images: convert MZP image archives to PNG and back.
+//! Background images: convert MZP containers to PNG and back.
 
 use std::fs;
 use std::io::{BufReader, BufWriter};
@@ -8,28 +8,30 @@ use hunex_image::{decode_mzp, encode_like_mzp, encode_mzp};
 
 use crate::cli::{finish, parse as parse_args, usage, CliError};
 
+/// Help text for the `image` (background images) command.
 pub const HELP: &str = "\
-hunex image: background images (MZP archives of palette tiles)
+hunex image: background images (MZP containers of palette tiles)
 
 Usage:
   hunex image to-png <in.mzp> -o <out.png>
   hunex image from-png <in.png> -o <out.mzp> [--like <original.mzp>]
+  hunex image help
 
 --like takes the canvas, tile grid, crop and flags from the original, and the PNG must be the
 image's size. Without it, the image is padded with transparent pixels to whole 512x256 tiles.
-Tiles whose colours do not fit in 256 are quantised (lossy).
-  hunex image help
+Tiles whose colors do not fit in 256 are quantized (lossy).
 ";
 
 const TO_PNG_USAGE: &str = "usage: hunex image to-png <in.mzp> -o <out.png>\n";
 const FROM_PNG_USAGE: &str =
     "usage: hunex image from-png <in.png> -o <out.mzp> [--like <original.mzp>]\n";
 
+/// Runs the command with the arguments that follow its name. Returns the exit code.
 pub fn run(args: &[String]) -> ExitCode {
     match args.first().map(String::as_str) {
         None => usage(HELP),
         Some("help" | "-h" | "--help") => {
-            print!("{HELP}");
+            out!("{HELP}");
             ExitCode::SUCCESS
         }
         Some("to-png") => to_png(&args[1..]),
@@ -69,27 +71,30 @@ fn from_png(args: &[String]) -> ExitCode {
 
 fn png_to_mzp(input: &str, output: &str, like: Option<&str>) -> Result<(), CliError> {
     let (width, height, rgba) = read_png(input)?;
-    let packed =
-        match like {
-            Some(path) => {
-                let original = fs::read(path).map_err(|e| message(path, e))?;
-                let (packed, reports) = encode_like_mzp(&rgba, width, height, &original)
-                    .map_err(|e| message(input, e))?;
-                for report in reports {
-                    eprintln!(
-                    "tile {}: {} pixels changed, {} colours, {}, max error {}, mean error {:.3}",
+    let packed = match like {
+        Some(path) => {
+            let original = fs::read(path).map_err(|e| message(path, e))?;
+            let (packed, reports) =
+                encode_like_mzp(&rgba, width, height, &original).map_err(|e| message(input, e))?;
+            for report in reports {
+                eprintln!(
+                    "tile {}: {} pixels changed, {} colors, {}, max error {}, mean error {:.3}",
                     report.index,
                     report.changed_pixels,
-                    report.colours,
-                    if report.quantised { "quantised" } else { "exact" },
+                    report.colors,
+                    if report.quantized {
+                        "quantized"
+                    } else {
+                        "exact"
+                    },
                     report.max_error,
                     report.mean_error
                 );
-                }
-                packed
             }
-            None => encode_mzp(&rgba, width, height, None).map_err(|e| message(input, e))?,
-        };
+            packed
+        }
+        None => encode_mzp(&rgba, width, height, None).map_err(|e| message(input, e))?,
+    };
     fs::write(output, packed).map_err(|e| message(output, e))?;
     Ok(())
 }
@@ -137,7 +142,7 @@ fn read_png(input: &str) -> Result<(usize, usize, Vec<u8>), CliError> {
         other => {
             return Err(message(
                 input,
-                format!("colour type {other:?} is not RGB or RGBA"),
+                format!("color type {other:?} is not RGB or RGBA"),
             ))
         }
     };

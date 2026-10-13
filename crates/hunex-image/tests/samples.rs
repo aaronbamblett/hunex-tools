@@ -189,7 +189,7 @@ fn img1155_quantized_round_trip_error() {
 }
 
 #[test]
-fn img1155_with_noise_is_quantised_within_a_small_error() {
+fn img1155_with_noise_is_quantized_within_a_small_error() {
     let Some(files) = samples() else {
         return;
     };
@@ -398,11 +398,11 @@ fn img0408_and_img1155_red_rectangle_repaint_touches_only_its_tiles() {
         );
         for r in &reports {
             println!(
-                "{name} tile {}: {} pixels changed, {} colours, {}, max error {}, mean error {:.3}",
+                "{name} tile {}: {} pixels changed, {} colors, {}, max error {}, mean error {:.3}",
                 r.index,
                 r.changed_pixels,
-                r.colours,
-                if r.quantised { "quantised" } else { "exact" },
+                r.colors,
+                if r.quantized { "quantized" } else { "exact" },
                 r.max_error,
                 r.mean_error
             );
@@ -491,7 +491,7 @@ fn img1227_painted_rectangle_round_trips_under_both_readings() {
         "decoded image differs by {worst}, more than the reported tile error {allowed}"
     );
     assert!(
-        reports.iter().all(|r| r.quantised || r.max_error == 0),
+        reports.iter().all(|r| r.quantized || r.max_error == 0),
         "an exact tile differs: {reports:?}"
     );
     println!(

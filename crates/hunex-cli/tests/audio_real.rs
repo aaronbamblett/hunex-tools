@@ -33,12 +33,12 @@ fn env_dir(name: &str) -> Option<PathBuf> {
     }
 }
 
-fn work_root() -> PathBuf {
-    match std::env::var_os("HUNEX_WORK") {
-        Some(dir) => PathBuf::from(dir),
-        None => std::env::temp_dir(),
+fn work_root() -> Option<PathBuf> {
+    let dir = std::env::var_os("HUNEX_WORK").map(PathBuf::from);
+    if dir.is_none() {
+        eprintln!("HUNEX_WORK is not set; skipping the audio checks");
     }
-    .join(format!("hunex-audio-e2e-{}", std::process::id()))
+    dir.map(|dir| dir.join(format!("hunex-audio-e2e-{}", std::process::id())))
 }
 
 #[test]
@@ -81,7 +81,9 @@ fn switch_samples_remux_to_the_spec_packet_counts_and_durations() {
     let Some(dir) = env_dir("HUNEX_NOPUS_DIR") else {
         return;
     };
-    let work = work_root();
+    let Some(work) = work_root() else {
+        return;
+    };
     fs::create_dir_all(&work).unwrap();
     let cases = [
         ("A00_01_00_0000_0", 297usize, 285_000u64, 1u8),

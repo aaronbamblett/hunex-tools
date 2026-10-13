@@ -4,4 +4,4 @@ Reader for the Nintendo OPUS audio files of the Switch release, and a remuxer to
 
 The output is an intermediate for re-encoding: the game's engine plays Ogg Vorbis, not Opus. See the main README for the path to `.hw`.
 
-Part of the [hunex-tools](https://github.com/aaronbamblett/hunex-tools) project. Unofficial; not affiliated with HuneX or TYPE-MOON. The crate does not include any game data.
+Part of the [hunex-tools](https://github.com/aaronbamblett/hunex-tools) project. Unofficial; not affiliated with HuneX. The crate does not include any game data.

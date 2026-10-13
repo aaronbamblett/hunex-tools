@@ -10,7 +10,15 @@
 //! - 3, literal: `arg + 1` words follow, two bytes each.
 //!
 //! Output is cut to the decompressed size, and a final command may run past it.
+//!
+//! ```
+//! let plain = b"abcdabcdabcd";
+//! let stream = hunex_mzx::compress(plain);
+//! assert!(hunex_mzx::is_mzx0(&stream));
+//! assert_eq!(hunex_mzx::decompress(&stream).unwrap(), plain);
+//! ```
 
+#![warn(missing_docs)]
 #![no_std]
 
 extern crate alloc;
@@ -22,6 +30,7 @@ use alloc::vec;
 use alloc::vec::Vec;
 use core::fmt;
 
+/// The magic that starts every MZX0 stream: the ASCII name.
 pub const MAGIC: &[u8; 4] = b"MZX0";
 const HEADER: usize = 8;
 const RING: usize = 64;
@@ -36,23 +45,31 @@ pub const WINDOW_WORDS: usize = 4096;
 pub const MAX_DECOMPRESSED: usize = 1 << 28;
 const HASH_BITS: u32 = 16;
 
+/// Errors from reading an MZX0 stream.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum Error {
+    /// The stream does not start with `MZX0`.
     BadMagic,
+    /// The stream ends before the command or word at `offset`.
     Truncated {
+        /// Byte offset where the data ends.
         offset: usize,
     },
     /// A back-reference names words before the start of the output.
     BadReference {
+        /// A back-reference names words before the start of the output.
         offset: usize,
     },
     /// Bytes remain after the output is complete.
     TrailingBytes {
+        /// The stream has bytes after its last command.
         offset: usize,
     },
     /// The declared output size is beyond the limit the caller set.
     Limit {
+        /// The declared output size is larger than the limit the caller set.
         declared: usize,
+        /// The limit that was set.
         limit: usize,
     },
 }
@@ -78,6 +95,7 @@ impl fmt::Display for Error {
 
 impl core::error::Error for Error {}
 
+/// True when the bytes start with the `MZX0` magic.
 pub fn is_mzx0(bytes: &[u8]) -> bool {
     bytes.starts_with(MAGIC)
 }
@@ -137,24 +155,36 @@ pub fn decompress_with(input: &[u8], rule: WindowRule) -> Result<Vec<u8>, Error>
 /// One command of a PC stream, as the decoder ran it. `start` is the output word index.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum Step {
+    /// A literal command: `words` words that follow the command byte.
     Literal {
+        /// Output word index where the command starts.
         start: usize,
+        /// Number of words the command writes.
         words: usize,
     },
+    /// A repeat command, which writes the last output word `words` times.
     Repeat {
+        /// Output word index where the command starts.
         start: usize,
+        /// Number of words the command writes.
         words: usize,
     },
     /// `distance` is the number of words back the copy starts (the stored byte plus one).
     BackReference {
+        /// A back-reference command, which copies `words` words from `distance` words back.
         start: usize,
+        /// Output word index where the command starts.
         words: usize,
+        /// Number of words the command writes.
         distance: usize,
     },
     /// `written_at` is the output index of the literal word the ring slot holds.
     Ring {
+        /// A ring command, which writes one word from the ring of recent literal words.
         start: usize,
+        /// Output word index where the command starts.
         slot: usize,
+        /// Output word index of the literal the ring slot holds.
         written_at: usize,
     },
 }
@@ -177,7 +207,9 @@ pub fn trace(input: &[u8]) -> Result<Vec<Step>, Error> {
 /// counts show whether a stream stays inside that envelope.
 #[derive(Debug, Default, Clone, PartialEq, Eq)]
 pub struct Envelope {
+    /// Streams added.
     pub streams: usize,
+    /// Commands across all streams.
     pub commands: usize,
     /// The largest back-reference distance, in words (the stored byte plus one).
     pub max_distance: usize,
@@ -187,6 +219,7 @@ pub struct Envelope {
     pub crossings: usize,
     /// Back-references whose source lies before the start of the window they write in.
     pub source_before_window: usize,
+    /// Ring commands across all streams.
     pub ring_uses: usize,
     /// Ring uses whose entry was written before the start of the current window.
     pub ring_from_earlier_window: usize,
@@ -397,6 +430,7 @@ fn decode(
 pub mod switch {
     use super::*;
 
+    /// Decodes a Switch stream. The output stops at the declared size, and the input may have bytes after the last command.
     pub fn decompress(input: &[u8]) -> Result<Vec<u8>, Error> {
         decode(input, SWITCH, WindowRule::None, None, MAX_DECOMPRESSED)
     }

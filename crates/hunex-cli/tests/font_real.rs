@@ -187,7 +187,7 @@ fn the_eight_page_one_records_are_where_the_spec_says() {
 }
 
 #[test]
-fn both_atlas_pages_round_trip_exactly_within_256_colours() {
+fn both_atlas_pages_round_trip_exactly_within_256_colors() {
     let Some(bytes) = archive_bytes() else {
         return;
     };
@@ -196,14 +196,14 @@ fn both_atlas_pages_round_trip_exactly_within_256_colours() {
         let data = entry_data(&archive, name);
         let image = decode_mzp(data).unwrap();
         assert_eq!((image.width, image.height), (1024, 1024), "{name}");
-        let mut colours: Vec<[u8; 4]> = image
+        let mut colors: Vec<[u8; 4]> = image
             .rgba
             .chunks_exact(4)
             .map(|p| [p[0], p[1], p[2], p[3]])
             .collect();
-        colours.sort_unstable();
-        colours.dedup();
-        assert!(colours.len() <= 256, "{name}: {} colours", colours.len());
+        colors.sort_unstable();
+        colors.dedup();
+        assert!(colors.len() <= 256, "{name}: {} colors", colors.len());
         let rebuilt =
             encode_mzp(&image.rgba, image.width, image.height, Some(&image.layout)).unwrap();
         let again = decode_mzp(&rebuilt).unwrap();
@@ -212,8 +212,8 @@ fn both_atlas_pages_round_trip_exactly_within_256_colours() {
             "{name}: pixels change after the round trip"
         );
         println!(
-            "{name}: {} colours, rebuilt {} bytes (original {})",
-            colours.len(),
+            "{name}: {} colors, rebuilt {} bytes (original {})",
+            colors.len(),
             rebuilt.len(),
             data.len()
         );
@@ -238,8 +238,9 @@ fn every_table_exports_and_imports_back_byte_for_byte() {
         fs::write(&input, &body).unwrap();
         hunex(&["font", "export", path(&input), "-o", path(&tsv)]);
         hunex(&["font", "import", path(&tsv), "-o", path(&rebuilt)]);
+        let imported = fs::read(&rebuilt).unwrap();
         assert_eq!(
-            fs::read(&rebuilt).unwrap(),
+            hunex_lenzu::decompress(&imported).unwrap(),
             body,
             "{name}: export and import differ"
         );
@@ -247,7 +248,7 @@ fn every_table_exports_and_imports_back_byte_for_byte() {
 }
 
 #[test]
-fn tsukihime_123_renders_with_the_english_atlas() {
+fn sample_text_renders_with_the_english_atlas() {
     let Some(bytes) = archive_bytes() else {
         return;
     };
@@ -260,8 +261,8 @@ fn tsukihime_123_renders_with_the_english_atlas() {
     let atlas_path = work.join("render-FONT_en_H00.mzp");
     fs::write(&table_path, payload(&archive, "Font010000.ccit")).unwrap();
     fs::write(&atlas_path, entry_data(&archive, "FONT_en_H00.mzp")).unwrap();
-    let png_path = work.join("font-render-tsukihime-123.png");
-    let text = "Tsukihime 123";
+    let png_path = work.join("font-render-sample-123.png");
+    let text = "Sample 123";
     hunex(&[
         "font",
         "render",

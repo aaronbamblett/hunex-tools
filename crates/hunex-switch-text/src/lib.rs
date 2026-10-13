@@ -4,7 +4,15 @@
 //! value N is the text length, and value N + 1 is 0xFFFFFFFF. Slot N - 1 is a zero-length
 //! terminator, so there are N - 1 lines. Each line in the text ends with CR LF, which is not
 //! part of the line when it is read.
+//!
+//! ```
+//! // Two lines, "ab" and "cd": starts 0 and 4, the text length 8, then the 0xFFFFFFFF end marker.
+//! let table = [0, 0, 0, 0, 0, 0, 0, 4, 0, 0, 0, 8, 0, 0, 0, 8, 0xFF, 0xFF, 0xFF, 0xFF];
+//! let pair = hunex_switch_text::Pair::parse(&table, b"ab\r\ncd\r\n").unwrap();
+//! assert_eq!(pair.lookup("$000001").unwrap(), Some("cd"));
+//! ```
 
+#![warn(missing_docs)]
 #![no_std]
 
 extern crate alloc;
@@ -16,20 +24,38 @@ use alloc::string::String;
 use alloc::vec::Vec;
 use core::fmt;
 
+/// The value that ends the offset table. Read as the first offset of a slot that has no text.
 pub const SENTINEL: u32 = 0xFFFF_FFFF;
 
+/// Errors from reading a script text file.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum Error {
     /// The table is not a whole number of u32 values.
-    BadTableLength { length: usize },
+    /// The table is not a whole number of 4-byte offsets.
+    BadTableLength {
+        /// The length of the table in bytes.
+        length: usize,
+    },
     /// The table does not end with the sentinel, or is too short.
     BadTable,
     /// Slot starts go backwards, or the length value does not match the text.
-    BadOffsets { slot: usize },
+    /// The offsets of a slot are not in order or do not fit the text.
+    BadOffsets {
+        /// The slot whose offsets are wrong.
+        slot: usize,
+    },
     /// A line is not UTF-8.
-    NotUtf8 { line: usize },
+    /// A line is not valid UTF-8.
+    NotUtf8 {
+        /// The line number of the text.
+        line: usize,
+    },
     /// The language pair is missing.
-    NoSuchPair { pair: usize },
+    /// The pair index is past the end of the file.
+    NoSuchPair {
+        /// The pair index that was asked for.
+        pair: usize,
+    },
 }
 
 impl fmt::Display for Error {
@@ -91,6 +117,7 @@ impl<'a> Pair<'a> {
         self.starts.len().saturating_sub(1)
     }
 
+    /// True when the table holds no pairs.
     pub fn is_empty(&self) -> bool {
         self.len() == 0
     }
