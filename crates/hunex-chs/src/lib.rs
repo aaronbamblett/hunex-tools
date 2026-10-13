@@ -15,10 +15,16 @@
 extern crate alloc;
 
 mod opcodes;
+mod program;
+#[cfg(test)]
+mod program_tests;
 #[cfg(test)]
 mod tests;
 
 pub use opcodes::{opcode_info, OpcodeInfo, OPCODES};
+pub use program::{
+    EditError, Item, LabelId, LowerError, Operand, PoolEntry, Program, ProgramParts, StrId,
+};
 
 use alloc::vec::Vec;
 use core::fmt;
@@ -93,6 +99,7 @@ pub enum Error {
     UnregisteredOpcode { offset: usize, opcode: u32 },
     PoolBoundary { offset: usize },
     BadStringOperand { offset: usize, value: u32 },
+    BadCodePointer { offset: usize, value: u32 },
     InvalidUtf8 { offset: usize },
 }
 
@@ -112,6 +119,10 @@ impl fmt::Display for Error {
             Error::BadStringOperand { offset, value } => write!(
                 f,
                 "string operand 0x{value:x} at 0x{offset:x} is not a string start"
+            ),
+            Error::BadCodePointer { offset, value } => write!(
+                f,
+                "code pointer 0x{value:x} at 0x{offset:x} does not land on an instruction start"
             ),
             Error::InvalidUtf8 { offset } => write!(f, "string at 0x{offset:x} is not UTF-8"),
         }

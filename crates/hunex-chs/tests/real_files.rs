@@ -189,3 +189,39 @@ fn real_files_round_trip_byte_for_byte() {
     }
     assert_eq!(identical, 250);
 }
+
+#[test]
+fn real_files_lift_lower_round_trip_byte_for_byte() {
+    let Some(files) = chs_files() else {
+        return;
+    };
+    let mut identical = 0usize;
+    for path in &files {
+        let bytes =
+            std::fs::read(path).unwrap_or_else(|error| panic!("{}: {error}", path.display()));
+        let script =
+            Script::parse(&bytes).unwrap_or_else(|error| panic!("{}: {error}", path.display()));
+        let program = script
+            .lift()
+            .unwrap_or_else(|error| panic!("{}: lift: {error}", path.display()));
+        let encoded = program
+            .lower()
+            .unwrap_or_else(|error| panic!("{}: lower: {error}", path.display()))
+            .encode();
+        if encoded == bytes {
+            identical += 1;
+        } else {
+            let offset = encoded
+                .iter()
+                .zip(&bytes)
+                .position(|(a, b)| a != b)
+                .unwrap_or(encoded.len().min(bytes.len()));
+            panic!(
+                "{}: lift/lower differs first at offset 0x{offset:x}",
+                path.display()
+            );
+        }
+    }
+    println!("lift/lower: {identical} of {} files identical", files.len());
+    assert_eq!(identical, 250);
+}

@@ -1,14 +1,14 @@
 use super::*;
 use alloc::vec;
 
-const MARKER: u32 = 0x1234_5678;
-const CODE_BASE: usize = 0x30;
+pub(crate) const MARKER: u32 = 0x1234_5678;
+pub(crate) const CODE_BASE: usize = 0x30;
 
 fn put(out: &mut Vec<u8>, value: u32) {
     out.extend_from_slice(&value.to_le_bytes());
 }
 
-fn build(magic: &[u8], includes: &[&[u8]], code: &[u32], pool: &[u8]) -> Vec<u8> {
+pub(crate) fn build(magic: &[u8], includes: &[&[u8]], code: &[u32], pool: &[u8]) -> Vec<u8> {
     build_with_fill(magic, includes, 0, code, pool)
 }
 
@@ -35,7 +35,7 @@ fn build_with_fill(
     out
 }
 
-fn hunex(code: &[u32], pool: &[u8]) -> Vec<u8> {
+pub(crate) fn hunex(code: &[u32], pool: &[u8]) -> Vec<u8> {
     build(HUNEX_MAGIC, &[], code, pool)
 }
 
@@ -43,7 +43,7 @@ fn set_dword(bytes: &mut [u8], offset: usize, value: u32) {
     bytes[offset..offset + 4].copy_from_slice(&value.to_le_bytes());
 }
 
-fn assert_round_trip(bytes: &[u8]) {
+pub(crate) fn assert_round_trip(bytes: &[u8]) {
     let script = Script::parse(bytes).unwrap();
     assert_eq!(script.encode(), bytes);
 }

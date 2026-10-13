@@ -4,7 +4,7 @@ use std::process::ExitCode;
 
 use hunex_chs::{opcode_info, Error, Instruction, Script};
 
-const USAGE: &str = "usage: chs-dump [--strings | --roundtrip] <file.chs>";
+const USAGE: &str = "usage: chs-dump [--strings | --roundtrip | --asm] <file.chs>";
 
 enum CliError {
     Io(io::Error),
@@ -26,11 +26,13 @@ impl From<Error> for CliError {
 fn main() -> ExitCode {
     let mut strings_only = false;
     let mut roundtrip = false;
+    let mut asm_mode = false;
     let mut path = None;
     for argument in std::env::args().skip(1) {
         match argument.as_str() {
             "--strings" => strings_only = true,
             "--roundtrip" => roundtrip = true,
+            "--asm" => asm_mode = true,
             "-h" | "--help" => {
                 println!("{USAGE}");
                 return ExitCode::SUCCESS;
@@ -47,6 +49,15 @@ fn main() -> ExitCode {
         eprintln!("{USAGE}");
         return ExitCode::from(2);
     };
+    if [strings_only, roundtrip, asm_mode]
+        .iter()
+        .filter(|&&on| on)
+        .count()
+        > 1
+    {
+        eprintln!("{USAGE}");
+        return ExitCode::from(2);
+    }
 
     let bytes = match std::fs::read(&path) {
         Ok(bytes) => bytes,
@@ -65,6 +76,9 @@ fn main() -> ExitCode {
 
     if roundtrip {
         return check_roundtrip(&path, &bytes, &script);
+    }
+    if asm_mode {
+        return print_asm(&path, &script);
     }
 
     let stdout = io::stdout();
@@ -159,4 +173,25 @@ fn check_roundtrip(path: &str, bytes: &[u8], script: &Script) -> ExitCode {
     );
     eprintln!("chs-dump: {path}: round-trip mismatch");
     ExitCode::FAILURE
+}
+
+fn print_asm(path: &str, script: &Script) -> ExitCode {
+    let program = match script.lift() {
+        Ok(program) => program,
+        Err(error) => {
+            eprintln!("chs-dump: {path}: {error}");
+            return ExitCode::FAILURE;
+        }
+    };
+    let text = hunex_chs_cli::asm::dump(&program);
+    let stdout = io::stdout();
+    let mut out = stdout.lock();
+    match out.write_all(text.as_bytes()).and_then(|()| out.flush()) {
+        Ok(()) => ExitCode::SUCCESS,
+        Err(error) if error.kind() == io::ErrorKind::BrokenPipe => ExitCode::SUCCESS,
+        Err(error) => {
+            eprintln!("chs-dump: {error}");
+            ExitCode::FAILURE
+        }
+    }
 }

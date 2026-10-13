@@ -3,11 +3,19 @@ name = "hunex-chs-cli"
 version.workspace = true
 edition.workspace = true
 license.workspace = true
-description = "chs-dump: print the instruction list of a HuneX .chs file"
+description = "chs-dump and chs-asm: print and assemble HuneX .chs instruction lists"
+
+[lib]
+name = "hunex_chs_cli"
+path = "src/lib.rs"
 
 [[bin]]
 name = "chs-dump"
 path = "src/main.rs"
+
+[[bin]]
+name = "chs-asm"
+path = "src/bin/chs-asm.rs"
 
 [dependencies]
 hunex-chs = { path = "../hunex-chs" }
