@@ -119,3 +119,49 @@ fn index_gives_rows_and_names_without_data() {
     assert_eq!(metas[0].row.byte_span(), 2 * SECTOR as u64);
     assert_eq!(metas[0].name.as_deref(), Some("A.NXZ"));
 }
+
+#[test]
+fn written_index_and_names_parse_back_to_the_same_slots() {
+    use crate::{decompressed_sectors, index_bytes, name_bytes, parse_index, parse_names, plan};
+    let slots = [Some((1, 5)), None, Some((3, 3)), Some((2, 2))];
+    let rows = plan(&slots).unwrap();
+    assert_eq!(
+        (
+            rows[0].start_sector,
+            rows[2].start_sector,
+            rows[3].start_sector
+        ),
+        (0, 1, 4)
+    );
+    assert!(rows[1].is_empty());
+    let hed = index_bytes(&rows);
+    assert_eq!(hed.len(), (slots.len() + 2) * 8);
+    assert_eq!(parse_index(&hed).unwrap(), rows);
+    let names = ["A.NXZ", crate::PLACEHOLDER, "B.MZP", "C.BIN"];
+    let nam = name_bytes(&names, slots.len()).unwrap();
+    assert_eq!(nam.len(), (slots.len() + 1) * crate::NAME_ROW);
+    assert_eq!(parse_names(&nam), names);
+    assert_eq!(decompressed_sectors(b"NXCX\x00\x08\x00\x00", 1), 1);
+    assert_eq!(decompressed_sectors(b"NXGX\x01\x08\x00\x00", 1), 2);
+    assert_eq!(decompressed_sectors(b"mrgd00\x00\x00", 7), 7);
+}
+
+#[test]
+fn name_writer_rejects_names_that_do_not_fit() {
+    use crate::{name_bytes, WriteError};
+    assert_eq!(
+        name_bytes(&["a".repeat(31).as_str()], 1),
+        Err(WriteError::BadName { index: 0 })
+    );
+    assert_eq!(
+        name_bytes(&["a\0"], 1),
+        Err(WriteError::BadName { index: 0 })
+    );
+    assert_eq!(
+        name_bytes(&["a"], 2),
+        Err(WriteError::NameCount {
+            expected: 2,
+            found: 1
+        })
+    );
+}
