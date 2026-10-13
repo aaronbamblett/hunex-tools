@@ -3,6 +3,10 @@
 version = 4
 
 [[package]]
+name = "hunex-ccit"
+version = "0.1.0"
+
+[[package]]
 name = "hunex-chs"
 version = "0.1.0"
 
