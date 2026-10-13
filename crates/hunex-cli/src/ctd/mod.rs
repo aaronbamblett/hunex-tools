@@ -8,6 +8,7 @@ use hunex_ctd::{format_id, parse_id, Text, MAX_LINES};
 
 use crate::cli::{finish, parse, usage, CliError};
 
+/// Help text for the `ctd` (script text) command.
 pub const HELP: &str = "\
 hunex ctd: script text (.ctd)
 
@@ -18,14 +19,15 @@ Usage:
   hunex ctd help
 
 Both stored (LenZu) and decompressed files are accepted. Text escapes: \\\\ for a backslash,
-\\t for a tab, \\r and \\n for CR and LF. Import writes a literal-only LenZu stream, which is
-larger than the original.
+\\t for a tab, \\r and \\n for CR and LF. Import writes a LenZu stream, compressed with the
+full compressor.
 ";
 
 const EXPORT_USAGE: &str = "usage: hunex ctd export <file.ctd> -o <lines.txt>\n";
 const IMPORT_USAGE: &str = "usage: hunex ctd import <lines.txt> -o <file.ctd>\n";
 const GET_USAGE: &str = "usage: hunex ctd get <file.ctd> <$id>...\n";
 
+/// Runs the command with the arguments that follow its name. Returns the exit code.
 pub fn run(args: &[String]) -> ExitCode {
     match args.first().map(String::as_str) {
         None => usage(HELP),

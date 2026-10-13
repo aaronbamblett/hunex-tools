@@ -11,6 +11,7 @@ use hunex_image::{decode_mzp, Image};
 use crate::cli::{finish, parse, usage, CliError};
 use crate::image::write_png;
 
+/// Help text for the `font` (glyph tables) command.
 pub const HELP: &str = "\
 hunex font: glyph tables (.ccit) of the HuneX engine
 
@@ -29,7 +30,7 @@ columns are empty for a table without coordinates; import sorts rows by code and
 Render draws each glyph from its index cell: page = index / 98, column = index % 14, row =
 (index % 98) / 14, cells 73 px square. The stored x is not used for drawing; the 8 page-1
 records of the 106-glyph tables store x values that land on other glyphs. The stored width
-is the pen advance. Missing characters are skipped with a message.
+is the glyph's drawn width, and it is used as the pen advance (the advance is assumed, not verified in game). Missing characters are skipped with a message.
 ";
 
 const INFO_USAGE: &str = "usage: hunex font info <x.ccit>\n";
@@ -42,6 +43,7 @@ const MARGIN: usize = 8;
 /// The most pixels one render may have (64 Mpx).
 const MAX_RENDER_PIXELS: usize = 1 << 26;
 
+/// Runs the command with the arguments that follow its name. Returns the exit code.
 pub fn run(args: &[String]) -> ExitCode {
     match args.first().map(String::as_str) {
         None => usage(HELP),
@@ -251,7 +253,7 @@ fn import_file(path: &str, output: &str) -> Result<(), CliError> {
         _ => None,
     };
     let table = Table::from_parts(records, coords).map_err(|e| message(path, e))?;
-    fs::write(output, table.to_bytes()).map_err(|e| message(output, e))
+    fs::write(output, hunex_lenzu::compress(&table.to_bytes())).map_err(|e| message(output, e))
 }
 
 fn render(args: &[String]) -> ExitCode {

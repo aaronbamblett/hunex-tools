@@ -72,8 +72,7 @@ fn stored_and_decompressed_forms_both_load() {
 #[test]
 fn corrupt_stored_form_is_reported() {
     let mut stored = Text::parse(b"alpha\r\n").unwrap().to_stored();
-    let last = stored.len() - 1;
-    stored[last] ^= 0x40;
+    stored[0x28] ^= 0x40;
     assert!(matches!(Text::from_bytes(&stored), Err(Error::LenZu(_))));
 }
 

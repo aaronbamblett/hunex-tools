@@ -246,3 +246,32 @@ fn random_and_mutated_streams_never_panic() {
         let _ = decompress(&mutated);
     }
 }
+
+fn round_trip(plain: &[u8]) {
+    let packed = super::compress(plain);
+    assert_eq!(
+        decompress(&packed).unwrap(),
+        plain,
+        "round trip of {} bytes",
+        plain.len()
+    );
+}
+
+#[test]
+fn compressor_round_trips_edge_cases() {
+    round_trip(b"");
+    round_trip(b"x");
+    round_trip(&[0u8; 1000]);
+    round_trip(&[0xFFu8; 129]);
+    round_trip(&(0..=255u8).collect::<Vec<u8>>());
+    let mut seed = 0x1234_5678u32;
+    let random: Vec<u8> = (0..5000)
+        .map(|_| {
+            seed = seed.wrapping_mul(1_103_515_245).wrapping_add(12_345);
+            (seed >> 16) as u8
+        })
+        .collect();
+    round_trip(&random);
+    let text: Vec<u8> = b"the quick brown fox jumps over the lazy dog. ".repeat(300);
+    round_trip(&text);
+}

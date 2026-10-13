@@ -5,8 +5,17 @@
 //! has no header, no index table and no padding. Lines hold UTF-8 text with no bare CR or LF.
 //!
 //! [`Text::from_bytes`] accepts a stored LenZu entry or a decompressed body, detected by the
-//! LenZu magic. [`Text::to_stored`] writes a literal-only LenZu stream.
+//! LenZu magic. [`Text::to_stored`] writes a LenZu stream.
+//!
+//! ```
+//! let text = hunex_ctd::Text::parse(b"first\r\nsecond\r\n").unwrap();
+//! assert_eq!(text.lookup("$000001"), Some("second"));
+//! assert_eq!(text.write(), b"first\r\nsecond\r\n");
+//! let stored = text.to_stored();
+//! assert_eq!(hunex_ctd::Text::from_bytes(&stored).unwrap().write(), text.write());
+//! ```
 
+#![warn(missing_docs)]
 #![no_std]
 
 extern crate alloc;
@@ -21,26 +30,37 @@ use core::fmt;
 /// The most lines an id can name: six digits.
 pub const MAX_LINES: usize = 1_000_000;
 
+/// Errors from reading or changing a script text body.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum Error {
+    /// A line is not valid UTF-8. `offset` is where the line starts.
     InvalidUtf8 {
+        /// Byte offset of the line.
         offset: usize,
     },
+    /// A line ends in a bare line feed (LF) with no carriage return.
     BareLf {
+        /// Byte offset of the line.
         offset: usize,
     },
+    /// A line ends in a bare carriage return (CR) with no line feed.
     BareCr {
+        /// Byte offset of the line.
         offset: usize,
     },
     /// The body does not end with CRLF; the bytes from `offset` form an unterminated line.
     Unterminated {
+        /// The body does not end with CRLF. The bytes from `offset` are an unterminated line.
         offset: usize,
     },
     /// A line cannot hold CR or LF, because the body uses them as separators.
     LineBreakInText,
+    /// A line index is past the end of the body.
     IndexOutOfRange {
+        /// The index that was asked for.
         index: usize,
     },
+    /// The stored LenZu stream could not be decoded.
     LenZu(hunex_lenzu::Error),
 }
 
@@ -73,6 +93,7 @@ pub struct Text {
 }
 
 impl Text {
+    /// An empty body with no lines.
     pub fn new() -> Text {
         Text::default()
     }
@@ -125,23 +146,27 @@ impl Text {
         body
     }
 
-    /// A stored entry: the body in a literal-only LenZu stream.
+    /// A stored entry: the body in a LenZu stream.
     pub fn to_stored(&self) -> Vec<u8> {
-        hunex_lenzu::compress_literal(&self.write())
+        hunex_lenzu::compress(&self.write())
     }
 
+    /// The number of lines.
     pub fn len(&self) -> usize {
         self.lines.len()
     }
 
+    /// True when the body has no lines.
     pub fn is_empty(&self) -> bool {
         self.lines.is_empty()
     }
 
+    /// Every line of the body, without the CRLF that ends each one.
     pub fn lines(&self) -> &[String] {
         &self.lines
     }
 
+    /// The line at `index`, or `None` when the index is past the end.
     pub fn line(&self, index: usize) -> Option<&str> {
         self.lines.get(index).map(String::as_str)
     }
@@ -151,6 +176,7 @@ impl Text {
         self.line(parse_id(id)?)
     }
 
+    /// Replaces the line at `index`. The new text must be valid for a line: no CR or LF.
     pub fn set_line(&mut self, index: usize, text: &str) -> Result<(), Error> {
         check_line(text)?;
         let slot = self

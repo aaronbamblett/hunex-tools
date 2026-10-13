@@ -1,7 +1,6 @@
 //! HFA script archives: list, unpack into a directory with a manifest, and pack back.
 
 use std::borrow::Cow;
-use std::collections::BTreeMap;
 use std::fs;
 use std::io::{Read as _, Seek as _, SeekFrom, Write as _};
 use std::path::Path;
@@ -12,6 +11,7 @@ use hunex_lenzu as lenzu_codec;
 
 use crate::cli::{finish, parse, usage, CliError};
 
+/// Help text for the `hfa` (HFA archives) command.
 pub const HELP: &str = "\
 hunex hfa: HFA script archives (.hfa)
 
@@ -21,17 +21,22 @@ Usage:
   hunex hfa pack <dir> -o <archive.hfa> [--base <original.hfa>]
   hunex hfa help
 
-unpack writes each entry as a file, plus hfa-manifest.txt, which records the order and
-which entries were decompressed. pack rebuilds the archive from that directory. With --base,
+unpack writes each entry as a file, plus hfa-manifest.txt, which records the order, the file
+name of each entry, the name it has in the archive, and whether it was decompressed. An entry
+whose name is taken by an earlier entry (ignoring case) gets a numbered file name, such as
+name(2).ext. pack rebuilds the archive from that directory, with the archive names. With --base,
 an entry whose content matches the base archive's entry reuses the base's stored bytes.
 ";
 
 const MANIFEST: &str = "hfa-manifest.txt";
-const MANIFEST_HEADER: &str = "hunex-hfa-manifest 1";
+const MANIFEST_HEADER: &str = "hunex-hfa-manifest 2";
+/// Manifests written before the archive names were recorded have two columns per line.
+const MANIFEST_HEADER_V1: &str = "hunex-hfa-manifest 1";
 const LIST_USAGE: &str = "usage: hunex hfa list <archive.hfa>\n";
 const UNPACK_USAGE: &str = "usage: hunex hfa unpack <archive.hfa> -o <dir> [--decompress]\n";
 const PACK_USAGE: &str = "usage: hunex hfa pack <dir> -o <archive.hfa> [--base <original.hfa>]\n";
 
+/// Runs the command with the arguments that follow its name. Returns the exit code.
 pub fn run(args: &[String]) -> ExitCode {
     match args.first().map(String::as_str) {
         None => usage(HELP),
@@ -125,15 +130,16 @@ fn unpack(args: &[String]) -> ExitCode {
 fn unpack_archive(path: &str, dir: &str, decompress: bool) -> Result<(), CliError> {
     let mut file = fs::File::open(path).map_err(|e| error(path, e))?;
     let (table_len, toc) = read_table(&mut file, path)?;
-    for entry in &toc {
-        check_file_name(&entry.name).map_err(|e| error(path, e))?;
+    let names: Vec<String> = toc.iter().map(|entry| entry.name.clone()).collect();
+    for name in &names {
+        check_structure(name).map_err(|e| error(path, e))?;
     }
-    check_unique_names(toc.iter().map(|entry| entry.name.as_str())).map_err(|e| error(path, e))?;
+    let disk = disk_names(&names).map_err(|e| error(path, e))?;
 
     let dir = Path::new(dir);
     fs::create_dir_all(dir).map_err(|e| error(&dir.display().to_string(), e))?;
     let mut manifest = format!("{MANIFEST_HEADER}\n");
-    for entry in &toc {
+    for (entry, file_name) in toc.iter().zip(&disk) {
         let at = (table_len + entry.offset) as u64;
         let stored = read_bytes(&mut file, path, at, entry.size)?;
         let (flag, content) = if decompress && lenzu_codec::is_lenzu(&stored) {
@@ -143,15 +149,46 @@ fn unpack_archive(path: &str, dir: &str, decompress: bool) -> Result<(), CliErro
         } else {
             ('0', stored)
         };
-        let target = dir.join(&entry.name);
+        let target = dir.join(file_name);
         fs::write(&target, &content).map_err(|e| error(&target.display().to_string(), e))?;
-        manifest.push_str(&format!("{flag}\t{}\n", entry.name));
+        manifest.push_str(&format!("{flag}\t{file_name}\t{}\n", entry.name));
     }
     let manifest_path = dir.join(MANIFEST);
     fs::write(&manifest_path, manifest)
         .map_err(|e| error(&manifest_path.display().to_string(), e))?;
     println!("unpacked {} entries to {}", toc.len(), dir.display());
     Ok(())
+}
+
+/// The file name of each entry in the unpack directory: its archive name when no earlier entry
+/// has it (ignoring case) and it is not a reserved device name, otherwise the first free
+/// `stem(n).ext`.
+fn disk_names(names: &[String]) -> Result<Vec<String>, String> {
+    let mut used = std::collections::BTreeSet::new();
+    let mut result = Vec::with_capacity(names.len());
+    for name in names {
+        check_structure(name)?;
+        let mut candidate = name.clone();
+        let mut counter = 1;
+        while used.contains(&candidate.to_lowercase())
+            || reserved_device(&candidate)
+            || candidate == MANIFEST
+        {
+            counter += 1;
+            candidate = numbered(name, counter);
+        }
+        used.insert(candidate.to_lowercase());
+        result.push(candidate);
+    }
+    Ok(result)
+}
+
+/// `stem(n).ext` for a name `stem.ext`, or `name(n)` when the name has no extension.
+fn numbered(name: &str, counter: usize) -> String {
+    match name.rsplit_once('.') {
+        Some((stem, extension)) if !stem.is_empty() => format!("{stem}({counter}).{extension}"),
+        _ => format!("{name}({counter})"),
+    }
 }
 
 fn pack(args: &[String]) -> ExitCode {
@@ -167,6 +204,9 @@ fn pack(args: &[String]) -> ExitCode {
 
 struct ManifestLine {
     decompressed: bool,
+    /// The file in the directory.
+    file: String,
+    /// The name the entry has in the archive.
     name: String,
 }
 
@@ -174,28 +214,32 @@ fn read_manifest(dir: &Path) -> Result<Vec<ManifestLine>, CliError> {
     let path = dir.join(MANIFEST);
     let text = fs::read_to_string(&path).map_err(|e| error(&path.display().to_string(), e))?;
     let mut lines = text.lines();
-    if lines.next() != Some(MANIFEST_HEADER) {
-        return Err(error(&path.display().to_string(), "not an hfa manifest"));
-    }
+    let header = lines.next();
+    let columns = match header {
+        Some(MANIFEST_HEADER) => 3,
+        Some(MANIFEST_HEADER_V1) => 2,
+        _ => return Err(error(&path.display().to_string(), "not an hfa manifest")),
+    };
     let mut entries = Vec::new();
     for line in lines.filter(|line| !line.is_empty()) {
-        let (flag, name) = line
-            .split_once('\t')
-            .ok_or_else(|| error(&path.display().to_string(), format!("bad line `{line}`")))?;
-        let decompressed = match flag {
+        let fields: Vec<&str> = line.split('\t').collect();
+        let fail = |what: &str| error(&path.display().to_string(), format!("{what} in `{line}`"));
+        if fields.len() != columns {
+            return Err(fail("bad line"));
+        }
+        let decompressed = match fields[0] {
             "0" => false,
             "1" => true,
-            _ => {
-                return Err(error(
-                    &path.display().to_string(),
-                    format!("bad flag in `{line}`"),
-                ))
-            }
+            _ => return Err(fail("bad flag")),
         };
-        check_file_name(name).map_err(|e| error(&path.display().to_string(), e))?;
+        let file = fields[1].to_string();
+        let name = fields.get(2).copied().unwrap_or(fields[1]).to_string();
+        check_file_name(&file).map_err(|e| error(&path.display().to_string(), e))?;
+        check_structure(&name).map_err(|e| error(&path.display().to_string(), e))?;
         entries.push(ManifestLine {
             decompressed,
-            name: name.to_string(),
+            file,
+            name,
         });
     }
     Ok(entries)
@@ -212,22 +256,35 @@ fn pack_archive(dir: &str, output: &str, base: Option<&str>) -> Result<(), CliEr
         (Some(bytes), Some(path)) => Some(Archive::parse(bytes).map_err(|e| error(path, e))?),
         _ => None,
     };
-    let base_entries: BTreeMap<&str, &Entry> = base_archive
+    let base_list: Vec<&Entry> = base_archive
         .iter()
         .flat_map(|archive| archive.entries().iter())
-        .map(|entry| (entry.name(), entry))
         .collect();
 
     let mut entries = Vec::with_capacity(manifest.len());
-    for line in &manifest {
-        let path = dir.join(&line.name);
+    for (index, line) in manifest.iter().enumerate() {
+        let path = dir.join(&line.file);
         let content = fs::read(&path).map_err(|e| error(&path.display().to_string(), e))?;
         let stored = if line.decompressed {
-            match base_entries.get(line.name.as_str()) {
+            // The base entry at the same position is preferred, so repeated names keep their own.
+            let base_entry = base_list
+                .get(index)
+                .filter(|entry| entry.name() == line.name)
+                .or_else(|| base_list.iter().find(|entry| entry.name() == line.name));
+            match base_entry {
                 Some(base_entry) if same_content(base_entry.data(), &content) => {
                     Cow::Borrowed(base_entry.data())
                 }
-                _ => Cow::Owned(lenzu_codec::compress_literal(&content)),
+                _ if lenzu_codec::is_lenzu(&content) => {
+                    return Err(error(
+                        &path.display().to_string(),
+                        "this entry is recorded as decompressed in hfa-manifest.txt, but the file already \
+                         starts with the LenZu magic, so pack would compress it twice. Unpack the archive \
+                         without --decompress and put the stored file in place, or replace it with the \
+                         decompressed bytes",
+                    ));
+                }
+                _ => Cow::Owned(lenzu_codec::compress(&content)),
             }
         } else {
             Cow::Owned(content)
@@ -252,21 +309,29 @@ fn same_content(stored: &[u8], plain: &[u8]) -> bool {
     }
 }
 
-/// Names become file names in the unpack directory, so they must not name a path, a device on
-/// Windows, or something Windows cannot store (a trailing dot or space).
-pub(crate) fn check_file_name(name: &str) -> Result<(), String> {
+/// Names become file names in the unpack directory, so they must not name a path. This checks
+/// the characters, length and ends of a name; `check_file_name` also checks device names.
+fn check_structure(name: &str) -> Result<(), String> {
     let bad = name.is_empty()
         || name == "."
         || name == ".."
         || name.len() > 255
-        || name == MANIFEST
         || name.ends_with('.')
         || name.ends_with(' ')
-        || reserved_device(name)
         || name.chars().any(|c| {
             c.is_control() || matches!(c, '/' | '\\' | ':' | '*' | '?' | '"' | '<' | '>' | '|')
         });
     if bad {
+        Err(format!("entry name `{name}` cannot be a file name"))
+    } else {
+        Ok(())
+    }
+}
+
+/// `check_structure`, and the name is not a Windows device name or the manifest's name.
+pub(crate) fn check_file_name(name: &str) -> Result<(), String> {
+    check_structure(name)?;
+    if reserved_device(name) || name == MANIFEST {
         Err(format!("entry name `{name}` cannot be a file name"))
     } else {
         Ok(())
@@ -296,20 +361,51 @@ fn reserved_device(name: &str) -> bool {
     }
 }
 
-/// Rejects two names that would name the same file on a case-insensitive file system.
-pub(crate) fn check_unique_names<'a>(names: impl Iterator<Item = &'a str>) -> Result<(), String> {
-    let mut seen = BTreeMap::new();
-    for name in names {
-        if let Some(first) = seen.insert(name.to_lowercase(), name) {
-            return Err(format!("entries `{first}` and `{name}` name the same file"));
-        }
-    }
-    Ok(())
-}
-
 #[cfg(test)]
 mod tests {
-    use super::{check_file_name, check_unique_names};
+    use super::{check_file_name, disk_names, pack_archive};
+    use std::fs;
+    use std::path::PathBuf;
+
+    fn pack_dir(tag: &str, file_bytes: &[u8]) -> (PathBuf, PathBuf) {
+        let dir = std::env::temp_dir().join(format!("hunex-hfa-pack-{tag}-{}", std::process::id()));
+        let _ = fs::remove_dir_all(&dir);
+        fs::create_dir_all(&dir).unwrap();
+        fs::write(dir.join("entry.ctd"), file_bytes).unwrap();
+        fs::write(
+            dir.join("hfa-manifest.txt"),
+            "hunex-hfa-manifest 2\n1\tentry.ctd\tentry.ctd\n",
+        )
+        .unwrap();
+        (dir.clone(), dir.join("out.hfa"))
+    }
+
+    #[test]
+    fn pack_refuses_a_decompressed_entry_that_is_already_lenzu() {
+        let stored = hunex_lenzu::compress(b"script body");
+        let (dir, out) = pack_dir("refuse", &stored);
+        let error = pack_archive(dir.to_str().unwrap(), out.to_str().unwrap(), None)
+            .unwrap_err()
+            .to_string();
+        let _ = fs::remove_dir_all(&dir);
+        assert!(error.contains("entry.ctd"), "{error}");
+        assert!(error.contains("compress it twice"), "{error}");
+        assert!(error.contains("without --decompress"), "{error}");
+    }
+
+    #[test]
+    fn pack_compresses_a_decompressed_entry_that_is_plain() {
+        let (dir, out) = pack_dir("plain", b"script body");
+        let result = pack_archive(dir.to_str().unwrap(), out.to_str().unwrap(), None);
+        let packed = fs::read(&out);
+        let _ = fs::remove_dir_all(&dir);
+        result.unwrap();
+        let packed = packed.unwrap();
+        let archive = hunex_hfa::Archive::parse(&packed).unwrap();
+        let data = archive.entries()[0].data();
+        assert!(hunex_lenzu::is_lenzu(data));
+        assert_eq!(hunex_lenzu::decompress(data).unwrap(), b"script body");
+    }
 
     #[test]
     fn windows_device_names_and_trailing_dots_or_spaces_are_rejected() {
@@ -332,8 +428,20 @@ mod tests {
     }
 
     #[test]
-    fn case_insensitive_duplicates_are_rejected() {
-        assert!(check_unique_names(["a.bin", "b.bin"].into_iter()).is_ok());
-        assert!(check_unique_names(["Font.ctd", "font.CTD"].into_iter()).is_err());
+    fn repeated_and_reserved_names_get_numbered_file_names() {
+        let names: Vec<String> = ["face.cbg", "FACE.cbg", "CON.txt", "kusa.cbg", "kusa.cbg"]
+            .iter()
+            .map(|s| s.to_string())
+            .collect();
+        assert_eq!(
+            disk_names(&names).unwrap(),
+            [
+                "face.cbg",
+                "FACE(2).cbg",
+                "CON(2).txt",
+                "kusa.cbg",
+                "kusa(2).cbg"
+            ]
+        );
     }
 }
