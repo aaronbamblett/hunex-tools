@@ -56,6 +56,10 @@ dependencies = [
 ]
 
 [[package]]
+name = "hunex-cbg"
+version = "0.1.0"
+
+[[package]]
 name = "hunex-ccit"
 version = "0.1.0"
 
@@ -67,6 +71,7 @@ version = "0.1.0"
 name = "hunex-cli"
 version = "0.1.0"
 dependencies = [
+ "hunex-cbg",
  "hunex-ccit",
  "hunex-chs",
  "hunex-ctd",

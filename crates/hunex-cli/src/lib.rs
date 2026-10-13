@@ -1,5 +1,8 @@
 //! The `hunex` command. Each engine format is a module with its own commands.
 
+#![warn(missing_docs)]
+
+pub mod cbg;
 pub mod chs;
 pub mod cli;
 pub mod ctd;

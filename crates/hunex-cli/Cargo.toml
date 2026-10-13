@@ -24,6 +24,7 @@ hunex-hfa = { path = "../hunex-hfa", version = "0.1.0" }
 hunex-lenzu = { path = "../hunex-lenzu", version = "0.1.0" }
 hunex-ctd = { path = "../hunex-ctd", version = "0.1.0" }
 hunex-ccit = { path = "../hunex-ccit", version = "0.1.0" }
+hunex-cbg = { path = "../hunex-cbg", version = "0.1.0" }
 hunex-hw = { path = "../hunex-hw", version = "0.1.0" }
 hunex-nopus = { path = "../hunex-nopus", version = "0.1.0" }
 hunex-ogg = { path = "../hunex-ogg", version = "0.1.0" }

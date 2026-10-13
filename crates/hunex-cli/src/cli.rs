@@ -1,12 +1,17 @@
+//! Top-level dispatch, the help text, and error reporting for the `hunex` command.
+
 use std::fmt;
 use std::process::ExitCode;
 
 use crate::{
-    chs, ctd, font, hfa, hw, image, lenzu, mrg, mzp, mzx, nopus, nx, switch_script, switch_text,
+    cbg, chs, ctd, font, hfa, hw, image, lenzu, mrg, mzp, mzx, nopus, nx, switch_script,
+    switch_text,
 };
 
+/// The version of the `hunex` command, from the package version.
 pub const VERSION: &str = env!("CARGO_PKG_VERSION");
 
+/// Help text for the `hunex` command and its list of commands.
 pub const HELP: &str = "\
 hunex: tools for HuneX engine file formats
 
@@ -22,6 +27,7 @@ Formats:
   ctd     script text (.ctd): export, import, get
   hw      audio (.hw): info, unwrap, wrap
   font    glyph tables (.ccit): info, export, import, render
+  cbg     CompressedBG images (.cbg): info, to-png, from-png
   nopus   Nintendo OPUS audio: info, to-ogg
   mzp     image containers (.mzp): list, unpack, pack
   image   background images: to-png, from-png
@@ -34,6 +40,7 @@ Formats:
 Run `hunex <format> help` for the commands of one format.
 ";
 
+/// Runs the `hunex` command with the arguments that follow its name. Returns the exit code.
 pub fn run(args: &[String]) -> ExitCode {
     match args.first().map(String::as_str) {
         None => {
@@ -58,6 +65,7 @@ pub fn run(args: &[String]) -> ExitCode {
         Some("mzp") => mzp::run(&args[1..]),
         Some("image") => image::run(&args[1..]),
         Some("mzx") => mzx::run(&args[1..]),
+        Some("cbg") => cbg::run(&args[1..]),
         Some("mrg") => mrg::run(&args[1..]),
         Some("nx") => nx::run(&args[1..]),
         Some("switch-text") => switch_text::run(&args[1..]),
