@@ -1,7 +1,7 @@
 use std::fmt;
 use std::process::ExitCode;
 
-use crate::chs;
+use crate::{chs, hfa, lenzu};
 
 pub const VERSION: &str = env!("CARGO_PKG_VERSION");
 
@@ -14,7 +14,9 @@ Usage:
   hunex --version
 
 Formats:
-  chs    compiled scripts (.chs): dump, roundtrip, asm
+  chs     compiled scripts (.chs): dump, roundtrip, asm
+  hfa     script archives (.hfa): list, unpack, pack
+  lenzu   LenZu compressed streams: decompress, compress
 
 Run `hunex <format> help` for the commands of one format.
 ";
@@ -34,6 +36,8 @@ pub fn run(args: &[String]) -> ExitCode {
             ExitCode::SUCCESS
         }
         Some("chs") => chs::run(&args[1..]),
+        Some("hfa") => hfa::run(&args[1..]),
+        Some("lenzu") => lenzu::run(&args[1..]),
         Some(other) => {
             eprintln!("hunex: unknown command `{other}`");
             eprint!("{HELP}");
@@ -80,4 +84,53 @@ pub(crate) fn finish(result: Result<(), CliError>) -> ExitCode {
 pub(crate) fn usage(text: &str) -> ExitCode {
     eprint!("{text}");
     ExitCode::from(2)
+}
+
+/// Options of one command: value options take the next argument, flags stand alone.
+pub(crate) struct Parsed<'a> {
+    pub positional: Vec<&'a str>,
+    values: Vec<(&'a str, &'a str)>,
+    flags: Vec<&'a str>,
+}
+
+impl<'a> Parsed<'a> {
+    pub fn value(&self, name: &str) -> Option<&'a str> {
+        self.values
+            .iter()
+            .find(|(option, _)| *option == name)
+            .map(|(_, value)| *value)
+    }
+
+    pub fn flag(&self, name: &str) -> bool {
+        self.flags.contains(&name)
+    }
+}
+
+pub(crate) fn parse<'a>(
+    args: &'a [String],
+    values: &[&str],
+    flags: &[&str],
+) -> Result<Parsed<'a>, String> {
+    let mut parsed = Parsed {
+        positional: Vec::new(),
+        values: Vec::new(),
+        flags: Vec::new(),
+    };
+    let mut arguments = args.iter();
+    while let Some(argument) = arguments.next() {
+        let argument = argument.as_str();
+        if values.contains(&argument) {
+            let value = arguments
+                .next()
+                .ok_or_else(|| format!("{argument} needs a value"))?;
+            parsed.values.push((argument, value.as_str()));
+        } else if flags.contains(&argument) {
+            parsed.flags.push(argument);
+        } else if argument.starts_with('-') {
+            return Err(format!("unknown option {argument}"));
+        } else {
+            parsed.positional.push(argument);
+        }
+    }
+    Ok(parsed)
 }

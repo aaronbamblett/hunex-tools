@@ -1,0 +1,13 @@
+[package]
+name = "hunex-hfa"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+repository.workspace = true
+rust-version.workspace = true
+description = "Reader and writer for HFA script archives of the HuneX engine"
+keywords = ["hunex", "hfa", "archive", "no-std"]
+categories = ["parser-implementations", "no-std"]
+readme = "README.md"
+
+[dependencies]

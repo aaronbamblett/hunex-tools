@@ -11,4 +11,14 @@ name = "hunex-cli"
 version = "0.1.0"
 dependencies = [
  "hunex-chs",
+ "hunex-hfa",
+ "hunex-lenzu",
 ]
+
+[[package]]
+name = "hunex-hfa"
+version = "0.1.0"
+
+[[package]]
+name = "hunex-lenzu"
+version = "0.1.0"

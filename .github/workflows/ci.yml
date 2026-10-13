@@ -31,3 +31,7 @@ jobs:
         run: cargo build -p hunex-chs --target wasm32-unknown-unknown
       - name: wasm (wasip2)
         run: cargo build -p hunex-chs --target wasm32-wasip2
+      - name: wasm libraries (unknown)
+        run: cargo build -p hunex-lenzu -p hunex-hfa --target wasm32-unknown-unknown
+      - name: wasm libraries (wasip2)
+        run: cargo build -p hunex-lenzu -p hunex-hfa --target wasm32-wasip2

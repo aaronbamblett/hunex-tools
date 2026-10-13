@@ -2,3 +2,5 @@
 
 pub mod chs;
 pub mod cli;
+pub mod hfa;
+pub mod lenzu;

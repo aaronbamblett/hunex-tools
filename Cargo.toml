@@ -1,6 +1,6 @@
 [workspace]
 resolver = "2"
-members = ["crates/hunex-chs", "crates/hunex-cli"]
+members = ["crates/hunex-chs", "crates/hunex-cli", "crates/hunex-lenzu", "crates/hunex-hfa"]
 
 [workspace.package]
 version = "0.1.0"
