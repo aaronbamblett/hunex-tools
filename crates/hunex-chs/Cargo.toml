@@ -3,6 +3,11 @@ name = "hunex-chs"
 version.workspace = true
 edition.workspace = true
 license.workspace = true
-description = "Decoder for HuneX compiled script (.chs) files"
+repository.workspace = true
+rust-version.workspace = true
+description = "Decoder and exact re-encoder for HuneX compiled script (.chs) files"
+keywords = ["hunex", "chs", "script", "decoder"]
+categories = ["parser-implementations", "no-std"]
+readme = "README.md"
 
 [dependencies]

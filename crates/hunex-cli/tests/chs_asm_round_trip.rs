@@ -1,7 +1,7 @@
 use std::path::PathBuf;
 
 use hunex_chs::Script;
-use hunex_chs_cli::asm;
+use hunex_cli::chs::asm;
 
 fn chs_files() -> Option<Vec<PathBuf>> {
     let Some(dir) = std::env::var_os("HUNEX_CHS_DIR") else {

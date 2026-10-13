@@ -1,8 +1,10 @@
 [workspace]
 resolver = "2"
-members = ["crates/hunex-chs", "crates/hunex-chs-cli"]
+members = ["crates/hunex-chs", "crates/hunex-cli"]
 
 [workspace.package]
 version = "0.1.0"
 edition = "2021"
 license = "MIT"
+repository = "https://github.com/aaronbamblett/hunex-tools"
+rust-version = "1.96"

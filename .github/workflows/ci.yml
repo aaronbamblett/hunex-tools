@@ -1,0 +1,33 @@
+name: CI
+
+on:
+  push:
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  test:
+    name: test (${{ matrix.os }})
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, windows-latest]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@1.96
+        with:
+          components: rustfmt, clippy
+          targets: wasm32-unknown-unknown, wasm32-wasip2
+      - name: fmt
+        run: cargo fmt --all --check
+      - name: clippy
+        run: cargo clippy --workspace --all-targets -- -D warnings
+      - name: test
+        run: cargo test --workspace
+      - name: wasm (unknown)
+        run: cargo build -p hunex-chs --target wasm32-unknown-unknown
+      - name: wasm (wasip2)
+        run: cargo build -p hunex-chs --target wasm32-wasip2

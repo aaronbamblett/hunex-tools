@@ -1,46 +1,75 @@
-# hunex-chs
+# hunex-tools
 
-A Rust decoder for HuneX compiled script (`.chs`) files, as used by the Steam release of *Witch on the Holy Night*. It reads a script and returns its header facts, the instruction list (file offset, opcode id, inline operands), and the string pool. The library has no dependencies and builds as `no_std`, so it also compiles to `wasm32-unknown-unknown` and `wasm32-wasip2`. The `chs-dump` command prints a script as an instruction list.
+Tools for file formats of the HuneX engine. The first format is `.chs` compiled scripts, as used by the Steam release of *Witch on the Holy Night*. The project will add more formats as sibling crates.
 
-The project does not include any game files. Supply your own copy of the scripts from a game you own.
+- `hunex-chs` (library): decodes `.chs` scripts into instructions, strings and header facts; re-encodes them; converts to and from a symbolic form with labels and strings. It is `no_std`, has no dependencies, and builds for WebAssembly.
+- `hunex-cli` (command `hunex`): lists, round-trips and assembles `.chs` files.
 
-## Build and test
+This is an unofficial fan project. It is not affiliated with HuneX or TYPE-MOON. No game data is included: you supply your own files from a copy of a game you own.
+
+## Status
+
+- Exact round-trip (decode, then encode) verified on all 250 Mahoyo scenes.
+- Lift, lower and text dump/assemble round-trips verified on all 250 scenes.
+- Relocation (inserting instructions and strings, then re-encoding) verified on the sample files in the test suite.
+- Not yet verified inside the game. Runtime-computed pointers are not relocated (see below).
+
+## Install
+
+From a release: download the zip for your platform from the GitHub releases page, check it against `SHA256SUMS`, and unzip. The zip contains `hunex` (`hunex.exe` on Windows), this README and the licence.
+
+From source, with Rust 1.96 or newer:
 
 ```sh
-cargo build --workspace
-cargo test --workspace
-cargo clippy --workspace --all-targets -- -D warnings
-cargo build -p hunex-chs --target wasm32-unknown-unknown
-cargo build -p hunex-chs --target wasm32-wasip2
-```
-
-The unit tests use synthetic bytes. The real-file checks in `crates/hunex-chs/tests/real_files.rs` run only when `HUNEX_CHS_DIR` points at a directory holding 250 `.chs` files. Without it they print a note and skip:
-
-```sh
-HUNEX_CHS_DIR=/path/to/decompressed/chs cargo test --workspace -- --nocapture
+cargo install --path crates/hunex-cli
 ```
 
 ## Command line
 
-```sh
-cargo run -p hunex-chs-cli -- path/to/script.chs
-cargo run -p hunex-chs-cli -- --strings path/to/script.chs
+```text
+hunex chs dump <file.chs>             print the instruction list
+hunex chs dump --strings <file.chs>   print only the string operands
+hunex chs dump --asm <file.chs>       print the text form (re-assemblable)
+hunex chs roundtrip <file.chs>        re-encode and compare with the file
+hunex chs asm <in.txt> -o <out.chs>   assemble the text form into a script
+hunex --version
+hunex help
 ```
 
-`--roundtrip` re-encodes the parsed script and prints `identical`, or the first differing offset and exits non-zero.
+The text form is described in [docs/asm-format.md](docs/asm-format.md). The `.chs` format as implemented is described in [docs/chs-format.md](docs/chs-format.md). The opcode table is in [docs/opcodes.md](docs/opcodes.md).
 
-Each instruction prints as offset, opcode id, mnemonic (where known), and operands. Opcodes 0x03 and 0x7F also print their resolved string. `--strings` prints only the resolved strings, in code order.
+## Library
 
-## Known limit
+```rust
+use hunex_chs::Script;
 
-The code section has no explicit length in the file. The string pool is taken to start at the smallest string pointer, and the walk must end on a return exactly there. A crafted file whose smallest pointer targets a return in the middle of the code is accepted, and the code after that return is treated as pool. Real files cannot be told apart from that case, and the exe has no explicit code length either.
+let bytes = std::fs::read("script.chs")?;
+let script = Script::parse(&bytes)?;
+assert_eq!(script.encode(), bytes);
 
-## Lift, lower and text form
+let program = script.lift()?;
+let edited = program.lower()?.encode();
+```
 
-`Script::lift()` turns a parsed script into a `Program`: typed items (`Dword`, `Label` for 0x01 code pointers, `Str` for the string operand of 0x03 and 0x7F), labels on instruction positions, and a string table. `Program::lower()` recomputes every code pointer and string pointer and returns a `Script`, which `encode()` turns into bytes. Editing: `insert`, `remove`, `add_label`, `move_label`, `add_string`, `set_string`. Removing an instruction that has a label on it is an error; move the label first.
+## Tests
 
-Pool rule: lifted strings keep the file's order, including entries no code references. On lowering, the pool starts at the first original string that code references, because the decoder takes the smallest string pointer as the pool start. Original strings follow in their original order. New or changed strings come after them, in table order, if code references them. Unreferenced new strings are dropped. Tail bytes after the last NUL are written last. Unchanged programs lower byte-identically (250 of 250 files).
+```sh
+cargo test --workspace
+```
 
-Text form: `chs-dump --asm file.chs` prints it, and `chs-asm in.txt -o out.chs` assembles it. Directives: `format hunex|buriko`, `header_size N`, `include "name"`, `header_padding HEX...`, `tail "text"`, `string S_0000 "text"` (original pool entry, in pool order) and `string new S_0000 "text"` (new). Labels are `L_0000:`. Instructions take a mnemonic or a hex id (`0x0f7`), with operands as numbers, `L_` labels, `S_` strings, or quoted strings (which become new strings). Quoted text escapes `\n \r \t \\ \"` and `\xNN`; valid UTF-8 is written as is.
+Tests that read real files are skipped unless `HUNEX_CHS_DIR` points at a directory with `.chs` files:
 
-Known risk: a pointer computed at runtime, or stored in a plain 0x00 dword, is not a label or string operand, so lowering does not move it. The 250 files show none detected, but that is not proven until a relocated script runs in the game.
+```sh
+HUNEX_CHS_DIR=/path/to/chs-files cargo test --workspace -- --nocapture
+```
+
+Those tests expect 250 files. The test output prints the round-trip, lift/lower, asm and relocation counts.
+
+## Known limits
+
+- The code section has no explicit length. The string pool starts at the smallest string pointer, so a crafted file can make code look like pool data. Real files cannot be told apart from this case.
+- Pointers computed at runtime, or stored in plain 0x00 dwords, are not recognised and are not moved when a script is lowered.
+
+## Licence
+
+MIT. See [LICENSE](LICENSE).

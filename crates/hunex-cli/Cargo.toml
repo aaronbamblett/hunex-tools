@@ -1,0 +1,22 @@
+[package]
+name = "hunex-cli"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+repository.workspace = true
+rust-version.workspace = true
+description = "The hunex command: inspect, round-trip and assemble HuneX engine files"
+keywords = ["hunex", "chs", "script", "cli"]
+categories = ["command-line-utilities"]
+readme = "README.md"
+
+[lib]
+name = "hunex_cli"
+path = "src/lib.rs"
+
+[[bin]]
+name = "hunex"
+path = "src/main.rs"
+
+[dependencies]
+hunex-chs = { path = "../hunex-chs", version = "0.1.0" }

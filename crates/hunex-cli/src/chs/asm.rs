@@ -500,7 +500,7 @@ mod tests {
     #[test]
     fn dump_escapes_bytes_that_are_not_text() {
         assert_eq!(quote(b"a\n\"\\\xff"), "\"a\\n\\\"\\\\\\xff\"");
-        assert_eq!(quote("日本".as_bytes()), "\"日本\"");
+        assert_eq!(quote("\u{65e5}\u{672c}".as_bytes()), "\"\u{65e5}\u{672c}\"");
     }
 
     fn error_at(text: &str) -> AsmError {
