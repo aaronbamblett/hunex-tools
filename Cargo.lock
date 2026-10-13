@@ -27,5 +27,23 @@ name = "hunex-hfa"
 version = "0.1.0"
 
 [[package]]
+name = "hunex-hw"
+version = "0.1.0"
+dependencies = [
+ "hunex-ogg",
+]
+
+[[package]]
 name = "hunex-lenzu"
+version = "0.1.0"
+
+[[package]]
+name = "hunex-nopus"
+version = "0.1.0"
+dependencies = [
+ "hunex-ogg",
+]
+
+[[package]]
+name = "hunex-ogg"
 version = "0.1.0"
