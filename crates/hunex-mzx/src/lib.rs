@@ -435,6 +435,66 @@ pub mod switch {
         decode(input, SWITCH, WindowRule::None, None, MAX_DECOMPRESSED)
     }
 
+    /// The length of a Switch stream in bytes: its header and the commands that write its output.
+    /// Bytes after the last command, which a container may hold, are not part of the stream.
+    pub fn stream_len(input: &[u8]) -> Result<usize, Error> {
+        if !is_mzx0(input) {
+            return Err(Error::BadMagic);
+        }
+        let size = read_u32(input, 4)? as usize;
+        let words_needed = size.div_ceil(2);
+        let mut position = HEADER;
+        let mut words = 0usize;
+        while words < words_needed {
+            let command = *input
+                .get(position)
+                .ok_or(Error::Truncated { offset: position })?;
+            position += 1;
+            let argument = usize::from(command >> 2);
+            match command & 3 {
+                0 => words += argument + 1,
+                1 => {
+                    input
+                        .get(position)
+                        .ok_or(Error::Truncated { offset: position })?;
+                    position += 1;
+                    words += argument + 1;
+                }
+                2 => words += 1,
+                _ => {
+                    let bytes = (argument + 1) * 2;
+                    input
+                        .get(position..position + bytes)
+                        .ok_or(Error::Truncated { offset: position })?;
+                    position += bytes;
+                    words += argument + 1;
+                }
+            }
+        }
+        Ok(position)
+    }
+
+    /// The commands of a Switch stream, in order, with the output positions they write.
+    pub fn trace(input: &[u8]) -> Result<Vec<Step>, Error> {
+        let mut steps = Vec::new();
+        decode(
+            input,
+            SWITCH,
+            WindowRule::None,
+            Some(&mut steps),
+            MAX_DECOMPRESSED,
+        )?;
+        Ok(steps)
+    }
+
+    /// Encodes a Switch stream with literals and back-references, under the same rules as the PC
+    /// encoder: no repeat commands, no ring recalls, copies of at most 255 words that stay inside
+    /// their 4096-word window, and a literal first word in each window. Literal bytes are XORed
+    /// with 0xFF.
+    pub fn compress(plain: &[u8]) -> Vec<u8> {
+        encode(plain, true)
+    }
+
     /// A literal-only Switch stream. Literal bytes are XORed with 0xFF, and an odd final byte is
     /// padded with a zero byte.
     pub fn compress_literal(plain: &[u8]) -> Vec<u8> {
@@ -455,6 +515,10 @@ pub mod switch {
 
 /// Encodes with runs, back-references and literals. Decoding the result gives `plain`.
 pub fn compress(plain: &[u8]) -> Vec<u8> {
+    encode(plain, false)
+}
+
+fn encode(plain: &[u8], xor_literals: bool) -> Vec<u8> {
     let words = to_words(plain);
     let mut out = header(plain.len());
     let mut literal: Vec<u16> = Vec::new();
@@ -476,7 +540,7 @@ pub fn compress(plain: &[u8]) -> Vec<u8> {
             if run >= 2 {
                 // The run copies the word before it: a back-reference at distance 1 that overlaps
                 // its own output. The encoder writes no repeat commands.
-                flush(&mut out, &mut literal);
+                flush(&mut out, &mut literal, xor_literals);
                 out.push((((run - 1) << 2) | 1) as u8);
                 out.push(0);
                 i += run;
@@ -508,7 +572,7 @@ pub fn compress(plain: &[u8]) -> Vec<u8> {
         };
         match matched {
             Some((distance, length)) => {
-                flush(&mut out, &mut literal);
+                flush(&mut out, &mut literal, xor_literals);
                 out.push((((length - 1) as u8) << 2) | 1);
                 out.push((distance - 1) as u8);
                 for t in 0..length {
@@ -523,12 +587,12 @@ pub fn compress(plain: &[u8]) -> Vec<u8> {
                 last = words[i];
                 i += 1;
                 if literal.len() == MAX_ARG_WORDS {
-                    flush(&mut out, &mut literal);
+                    flush(&mut out, &mut literal, xor_literals);
                 }
             }
         }
     }
-    flush(&mut out, &mut literal);
+    flush(&mut out, &mut literal, xor_literals);
     out
 }
 
@@ -559,13 +623,14 @@ fn to_words(plain: &[u8]) -> Vec<u16> {
         .collect()
 }
 
-fn flush(out: &mut Vec<u8>, literal: &mut Vec<u16>) {
+fn flush(out: &mut Vec<u8>, literal: &mut Vec<u16>, xor_literals: bool) {
     if literal.is_empty() {
         return;
     }
     out.push((((literal.len() - 1) as u8) << 2) | 3);
     for word in literal.iter() {
-        out.extend_from_slice(&word.to_le_bytes());
+        let stored = if xor_literals { word ^ 0xFFFF } else { *word };
+        out.extend_from_slice(&stored.to_le_bytes());
     }
     literal.clear();
 }
