@@ -180,3 +180,26 @@ fn random_and_mutated_archives_never_panic() {
         }
     }
 }
+
+#[test]
+fn the_table_alone_gives_the_entries_and_their_places() {
+    let packed = Archive::new(vec![
+        Entry::new("a.bin".into(), Cow::Owned(vec![1, 2, 3])),
+        Entry::new("b.bin".into(), Cow::Owned(vec![4; 10])),
+    ])
+    .write()
+    .unwrap();
+    let len = table_len(&packed).unwrap();
+    let data_len = packed.len() - len;
+    let toc = read_toc(&packed[..len], data_len).unwrap();
+    assert_eq!(toc.len(), 2);
+    assert_eq!(
+        (toc[0].name.as_str(), toc[0].offset, toc[0].size),
+        ("a.bin", 0, 3)
+    );
+    assert_eq!(
+        (toc[1].name.as_str(), toc[1].offset, toc[1].size),
+        ("b.bin", 3, 10)
+    );
+    assert!(read_toc(&packed[..len], data_len - 1).is_err());
+}

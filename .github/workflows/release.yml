@@ -36,7 +36,7 @@ jobs:
           version="${GITHUB_REF_NAME#v}"
           staging="hunex-${version}-${{ matrix.target }}"
           mkdir -p "$staging"
-          cp "target/${{ matrix.target }}/release/${{ matrix.binary }}" README.md LICENSE "$staging/"
+          cp "target/${{ matrix.target }}/release/${{ matrix.binary }}" README.md LICENSE THIRD_PARTY_LICENSES.md "$staging/"
           zip -r "$staging.zip" "$staging"
       - name: package (windows)
         if: runner.os == 'Windows'
@@ -45,7 +45,7 @@ jobs:
           $version = "$env:GITHUB_REF_NAME".TrimStart("v")
           $staging = "hunex-$version-${{ matrix.target }}"
           New-Item -ItemType Directory -Path $staging | Out-Null
-          Copy-Item "target/${{ matrix.target }}/release/${{ matrix.binary }}", "README.md", "LICENSE" -Destination $staging
+          Copy-Item "target/${{ matrix.target }}/release/${{ matrix.binary }}", "README.md", "LICENSE", "THIRD_PARTY_LICENSES.md" -Destination $staging
           Compress-Archive -Path $staging -DestinationPath "$staging.zip"
       - uses: actions/upload-artifact@v4
         with:

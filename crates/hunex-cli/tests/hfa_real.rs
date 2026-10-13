@@ -147,7 +147,7 @@ fn end_to_end_unpack_pack_and_edit_one_script() {
     let work = work_root();
     fs::create_dir_all(&work).unwrap();
 
-    for name in ARCHIVES {
+    for name in ARCHIVES.into_iter().chain(["data00200"]) {
         let original = dir.join(format!("{name}.hfa"));
         let unpacked = work.join(format!("{name}.dir"));
         let repacked = work.join(format!("{name}.repacked.hfa"));
@@ -173,7 +173,7 @@ fn end_to_end_unpack_pack_and_edit_one_script() {
             "{name}: unchanged repack differs"
         );
     }
-    println!("end to end: five unchanged unpack/pack cycles are byte-identical");
+    println!("end to end: unchanged unpack/pack cycles are byte-identical for the five script archives and data00200");
 
     let original = dir.join("data01100.hfa");
     let edit_dir = work.join("edit.dir");

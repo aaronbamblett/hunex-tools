@@ -35,3 +35,23 @@ jobs:
         run: cargo build -p hunex-lenzu -p hunex-hfa --target wasm32-unknown-unknown
       - name: wasm libraries (wasip2)
         run: cargo build -p hunex-lenzu -p hunex-hfa --target wasm32-wasip2
+      - name: wasm ctd (unknown)
+        run: cargo build -p hunex-ctd --target wasm32-unknown-unknown
+      - name: wasm ctd (wasip2)
+        run: cargo build -p hunex-ctd --target wasm32-wasip2
+      - name: wasm ogg, hw, nopus (unknown)
+        run: cargo build -p hunex-ogg -p hunex-hw -p hunex-nopus --target wasm32-unknown-unknown
+      - name: wasm ogg, hw, nopus (wasip2)
+        run: cargo build -p hunex-ogg -p hunex-hw -p hunex-nopus --target wasm32-wasip2
+      - name: wasm mzx, mzp, image (unknown)
+        run: cargo build -p hunex-mzx -p hunex-mzp -p hunex-image --target wasm32-unknown-unknown
+      - name: wasm mzx, mzp, image (wasip2)
+        run: cargo build -p hunex-mzx -p hunex-mzp -p hunex-image --target wasm32-wasip2
+      - name: wasm mrg, nx, switch-text (unknown)
+        run: cargo build -p hunex-mrg -p hunex-nx -p hunex-switch-text --target wasm32-unknown-unknown
+      - name: wasm mrg, nx, switch-text (wasip2)
+        run: cargo build -p hunex-mrg -p hunex-nx -p hunex-switch-text --target wasm32-wasip2
+      - name: wasm ccit (unknown)
+        run: cargo build -p hunex-ccit --target wasm32-unknown-unknown
+      - name: wasm ccit (wasip2)
+        run: cargo build -p hunex-ccit --target wasm32-wasip2

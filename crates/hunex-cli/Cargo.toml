@@ -22,3 +22,15 @@ path = "src/main.rs"
 hunex-chs = { path = "../hunex-chs", version = "0.1.0" }
 hunex-hfa = { path = "../hunex-hfa", version = "0.1.0" }
 hunex-lenzu = { path = "../hunex-lenzu", version = "0.1.0" }
+hunex-ctd = { path = "../hunex-ctd", version = "0.1.0" }
+hunex-ccit = { path = "../hunex-ccit", version = "0.1.0" }
+hunex-hw = { path = "../hunex-hw", version = "0.1.0" }
+hunex-nopus = { path = "../hunex-nopus", version = "0.1.0" }
+hunex-ogg = { path = "../hunex-ogg", version = "0.1.0" }
+hunex-image = { path = "../hunex-image", version = "0.1.0" }
+hunex-mzp = { path = "../hunex-mzp", version = "0.1.0" }
+hunex-mzx = { path = "../hunex-mzx", version = "0.1.0" }
+hunex-mrg = { path = "../hunex-mrg", version = "0.1.0" }
+hunex-nx = { path = "../hunex-nx", version = "0.1.0" }
+hunex-switch-text = { path = "../hunex-switch-text", version = "0.1.0" }
+png = "0.18"

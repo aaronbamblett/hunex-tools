@@ -153,47 +153,19 @@ impl<'a> Archive<'a> {
 
     /// Parses an archive. The entry data borrows from `bytes`.
     pub fn parse(bytes: &'a [u8]) -> Result<Archive<'a>, Error> {
-        if !bytes.starts_with(MAGIC) {
-            return Err(Error::BadMagic);
-        }
-        let count = u32_at(bytes, MAGIC.len())?;
-        let data_start = usize::try_from(count)
-            .ok()
-            .and_then(|count| count.checked_mul(RECORD_SIZE))
-            .and_then(|records| records.checked_add(HEADER_SIZE))
-            .filter(|&start| start <= bytes.len())
-            .ok_or(Error::CountPastEnd { count })?;
-        let data = &bytes[data_start..];
-
-        let mut entries = Vec::with_capacity(count as usize);
-        let mut expected = 0usize;
-        for index in 0..count as usize {
-            let record_at = HEADER_SIZE + index * RECORD_SIZE;
-            let record = &bytes[record_at..record_at + RECORD_SIZE];
-            let name = parse_name(index, &record[..NAME_FIELD])?;
-            if record[RESERVED_AT..].iter().any(|&byte| byte != 0) {
-                return Err(Error::NonZeroReserved { index });
-            }
-            let offset = u32_at(record, OFFSET_AT)? as usize;
-            let size = u32_at(record, SIZE_AT)? as usize;
-            if offset != expected {
-                return Err(Error::NotContiguous { index });
-            }
-            let end = offset
-                .checked_add(size)
-                .filter(|&end| end <= data.len())
-                .ok_or(Error::DataPastEnd { index })?;
-            entries.push(Entry {
-                name,
-                data: Cow::Borrowed(&data[offset..end]),
-            });
-            expected = end;
-        }
-        if expected != data.len() {
-            return Err(Error::TrailingBytes {
-                offset: data_start + expected,
-            });
-        }
+        let table_len = table_len(bytes)?;
+        let table = bytes.get(..table_len).ok_or(Error::CountPastEnd {
+            count: u32_at(bytes, MAGIC.len())?,
+        })?;
+        let toc = read_toc(table, bytes.len() - table_len)?;
+        let data = &bytes[table_len..];
+        let entries = toc
+            .into_iter()
+            .map(|entry| Entry {
+                data: Cow::Borrowed(&data[entry.offset..entry.offset + entry.size]),
+                name: entry.name,
+            })
+            .collect();
         Ok(Archive { entries })
     }
 
@@ -248,6 +220,67 @@ fn parse_name(index: usize, field: &[u8]) -> Result<String, Error> {
     }
     let name = core::str::from_utf8(&field[..end]).map_err(|_| Error::NameNotUtf8 { index })?;
     Ok(String::from(name))
+}
+
+/// One table entry: its name, and its data's offset and size from the start of the data.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct TocEntry {
+    pub name: String,
+    pub offset: usize,
+    pub size: usize,
+}
+
+/// The length of the header and table of an archive, from its first 16 bytes. The data follows.
+pub fn table_len(head: &[u8]) -> Result<usize, Error> {
+    if !head.starts_with(MAGIC) {
+        return Err(Error::BadMagic);
+    }
+    let count = u32_at(head, MAGIC.len())?;
+    usize::try_from(count)
+        .ok()
+        .and_then(|count| count.checked_mul(RECORD_SIZE))
+        .and_then(|records| records.checked_add(HEADER_SIZE))
+        .ok_or(Error::CountPastEnd { count })
+}
+
+/// Reads the table of an archive. `table` is the header and table (`table_len` bytes) and
+/// `data_len` is the number of bytes of data after it. Entries must be packed back to back, and
+/// the data must end where the last entry ends.
+pub fn read_toc(table: &[u8], data_len: usize) -> Result<Vec<TocEntry>, Error> {
+    let len = table_len(table)?;
+    if table.len() != len {
+        return Err(Error::CountPastEnd {
+            count: u32_at(table, MAGIC.len())?,
+        });
+    }
+    let count = u32_at(table, MAGIC.len())? as usize;
+    let mut entries = Vec::with_capacity(count);
+    let mut expected = 0usize;
+    for index in 0..count {
+        let record_at = HEADER_SIZE + index * RECORD_SIZE;
+        let record = &table[record_at..record_at + RECORD_SIZE];
+        let name = parse_name(index, &record[..NAME_FIELD])?;
+        if record[RESERVED_AT..].iter().any(|&byte| byte != 0) {
+            return Err(Error::NonZeroReserved { index });
+        }
+        let offset = u32_at(record, OFFSET_AT)? as usize;
+        let size = u32_at(record, SIZE_AT)? as usize;
+        if offset != expected {
+            return Err(Error::NotContiguous { index });
+        }
+        let end = offset
+            .checked_add(size)
+            .filter(|&end| end <= data_len)
+            .ok_or(Error::DataPastEnd { index })?;
+        entries.push(TocEntry { name, offset, size });
+        expected = end;
+    }
+    if expected != data_len {
+        return Err(Error::TrailingBytes {
+            offset: len + expected,
+        });
+    }
+    Ok(entries)
 }
 
 fn u32_at(bytes: &[u8], offset: usize) -> Result<u32, Error> {

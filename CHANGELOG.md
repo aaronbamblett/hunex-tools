@@ -2,11 +2,21 @@
 
 ## 0.1.0
 
-First release.
+First release. It contains:
 
-- hunex-chs: decoder for `.chs` compiled scripts (Hunex and Buriko headers), with exact re-encoding, lifting to a symbolic form with labels and strings, lowering, and an editing API. Relocation was checked on all 250 sample scripts. The third operand of 0x7B is a string pointer; lifting and lowering relocate it.
-- hunex-lenzu: decoder for LenZu compressed streams with checksum verification, and a literal-only encoder. The literal-only output is valid for the format, is accepted by the game (checked on one script, in the Steam release on 2026-10-13), and is larger than its input.
-- hunex-hfa: reader and writer for HFA script archives. The reader accepts only the packed layout the originals use; the writer produces it.
-- hunex-cli (`hunex`): `chs dump` (listing, `--strings`, `--asm`), `chs roundtrip`, `chs asm`, `hfa list`, `hfa unpack` (with `--decompress`), `hfa pack` (with `--base`), `lenzu decompress`, `lenzu compress`, `--version` and `help`.
-- Documentation: the `.chs`, HFA and LenZu formats, the text form, and the opcode table, which is checked against the code by a test.
-- Known limits: the `.chs` pool start is inferred from the smallest string pointer, and pointers computed at runtime are not relocated. One edited script (inserted instruction, moved pointers, literal-only entry) loaded and played in the Steam release on 2026-10-13; see the README status. Runtime-computed pointers are still not relocated.
+- hunex-chs: decoder for `.chs` compiled scripts (Hunex and Buriko headers), exact re-encoding, lifting to a symbolic form with labels and strings, lowering, and an editing API. The third operand of 0x7B is a string pointer, relocated by lifting and lowering.
+- hunex-lenzu: LenZu decoder with checksum verification, and a literal-only encoder.
+- hunex-hfa: reader and writer for HFA script archives in the packed layout; the table can be read without the data.
+- hunex-ctd: reader and writer for script text (`.ctd`) bodies, with line lookup by id, and export and import one line per id.
+- hunex-ogg: Ogg page reader and writer with CRC checks.
+- hunex-hw: reader and writer for `.hw` audio (64-byte header and Ogg Vorbis payload).
+- hunex-nopus: reader for Nintendo OPUS audio, and a remux to Ogg Opus (RFC 7845) that copies the packets unchanged.
+- hunex-mzx: MZX0 decoder and encoder for the PC and Switch variants. The PC decoder applies the 4096-word window reset; the encoder writes back-references and literals only.
+- hunex-mzp: MZP container reader and writer, with the PC and Switch size rules and 0xFF padding.
+- hunex-image: background images. HEP palette tiles abut at full size into an RGBA canvas, and encode back to MZP. `from-png --like` keeps unchanged tiles byte for byte and re-encodes changed ones. Font atlases (bitmap type 0x01) use a swizzled palette order.
+- hunex-ccit: glyph tables (`.ccit`) with both record forms, lookup by character, and insertion and replacement that keep the codes sorted and the indices dense.
+- hunex-mrg: MRG archive sets (index, names, entries read by seek).
+- hunex-nx: NXX wrappers (zlib and gzip), BNTX parsing, block-linear deswizzle, and BC7, BC4 and RGBA8 decoding. BC3 is reported as unsupported.
+- hunex-switch-text: `script_text.mrg` offset tables and `$` line lookup.
+- hunex-cli (`hunex`): commands for chs, hfa, lenzu, ctd, hw, nopus, mzp, image, font, mzx, mrg, nx, switch-text and switch-script. See the README.
+- Format notes in `docs/`, and `THIRD_PARTY_LICENSES.md`, which is included in the release zips.

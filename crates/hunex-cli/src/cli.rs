@@ -1,7 +1,9 @@
 use std::fmt;
 use std::process::ExitCode;
 
-use crate::{chs, hfa, lenzu};
+use crate::{
+    chs, ctd, font, hfa, hw, image, lenzu, mrg, mzp, mzx, nopus, nx, switch_script, switch_text,
+};
 
 pub const VERSION: &str = env!("CARGO_PKG_VERSION");
 
@@ -17,6 +19,17 @@ Formats:
   chs     compiled scripts (.chs): dump, roundtrip, asm
   hfa     script archives (.hfa): list, unpack, pack
   lenzu   LenZu compressed streams: decompress, compress
+  ctd     script text (.ctd): export, import, get
+  hw      audio (.hw): info, unwrap, wrap
+  font    glyph tables (.ccit): info, export, import, render
+  nopus   Nintendo OPUS audio: info, to-ogg
+  mzp     image containers (.mzp): list, unpack, pack
+  image   background images: to-png, from-png
+  mzx     MZX0 image tile streams: decompress, compress
+  mrg     Switch archive sets (.hed/.mrg/.nam): list, unpack
+  nx      Switch textures (NXX/BNTX): info, to-png
+  switch-text    Switch script text: export
+  switch-script  Switch scripts (allscr.mrg): dump
 
 Run `hunex <format> help` for the commands of one format.
 ";
@@ -38,6 +51,17 @@ pub fn run(args: &[String]) -> ExitCode {
         Some("chs") => chs::run(&args[1..]),
         Some("hfa") => hfa::run(&args[1..]),
         Some("lenzu") => lenzu::run(&args[1..]),
+        Some("ctd") => ctd::run(&args[1..]),
+        Some("hw") => hw::run(&args[1..]),
+        Some("font") => font::run(&args[1..]),
+        Some("nopus") => nopus::run(&args[1..]),
+        Some("mzp") => mzp::run(&args[1..]),
+        Some("image") => image::run(&args[1..]),
+        Some("mzx") => mzx::run(&args[1..]),
+        Some("mrg") => mrg::run(&args[1..]),
+        Some("nx") => nx::run(&args[1..]),
+        Some("switch-text") => switch_text::run(&args[1..]),
+        Some("switch-script") => switch_script::run(&args[1..]),
         Some(other) => {
             eprintln!("hunex: unknown command `{other}`");
             eprint!("{HELP}");
@@ -99,6 +123,14 @@ impl<'a> Parsed<'a> {
             .iter()
             .find(|(option, _)| *option == name)
             .map(|(_, value)| *value)
+    }
+
+    pub fn values(&self, name: &str) -> Vec<&'a str> {
+        self.values
+            .iter()
+            .filter(|(option, _)| *option == name)
+            .map(|(_, value)| *value)
+            .collect()
     }
 
     pub fn flag(&self, name: &str) -> bool {
