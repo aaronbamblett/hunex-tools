@@ -18,7 +18,9 @@ fn asm_format_example_assembles() {
         eprintln!("docs/asm-format.md is not in this package; skipping");
         return;
     }
-    let doc = std::fs::read_to_string(path).expect("read docs/asm-format.md");
+    let doc = std::fs::read_to_string(path)
+        .expect("read docs/asm-format.md")
+        .replace("\r\n", "\n");
     let text = example(&doc);
     let bytes = asm::build(text.as_bytes()).unwrap_or_else(|error| panic!("example: {error}"));
     let script = hunex_chs::Script::parse(&bytes).expect("example parses");

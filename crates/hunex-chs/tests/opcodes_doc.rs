@@ -47,7 +47,9 @@ fn opcodes_doc_matches_table() {
         std::fs::write(DOC, &rendered).expect("write docs/opcodes.md");
         return;
     }
-    let on_disk = std::fs::read_to_string(DOC).unwrap_or_default();
+    let on_disk = std::fs::read_to_string(DOC)
+        .unwrap_or_default()
+        .replace("\r\n", "\n");
     assert!(
         on_disk == rendered,
         "docs/opcodes.md is out of date; run HUNEX_UPDATE_DOCS=1 cargo test -p hunex-chs --test opcodes_doc"
