@@ -183,6 +183,34 @@ pub fn switch_spans(table: &[u8]) -> Result<Vec<Span>, Error> {
     Ok(spans)
 }
 
+/// The bytes of padding after an entry of `len` bytes: up to the next eight-byte boundary, and a
+/// full eight bytes when `len` is already aligned. Padding is `0xFF`.
+pub fn padding_len(len: usize) -> usize {
+    8 - len % 8
+}
+
+/// The padding byte, `0xFF`.
+pub const PADDING: u8 = PAD_BYTE;
+
+/// The header and table of a container whose entries have the given sizes. Each entry starts
+/// where the previous one's padding ends. The entry data, with its padding, follows the table.
+pub fn header_for(lengths: &[usize]) -> Result<Vec<u8>, Error> {
+    let count = u16::try_from(lengths.len()).map_err(|_| Error::TooLarge)?;
+    let mut out = Vec::with_capacity(HEADER + RECORD * lengths.len());
+    out.extend_from_slice(MAGIC);
+    out.extend_from_slice(&count.to_le_bytes());
+    let mut cursor = 0usize;
+    for &len in lengths {
+        let sector = u16::try_from(cursor / SECTOR).map_err(|_| Error::TooLarge)?;
+        out.extend_from_slice(&sector.to_le_bytes());
+        out.extend_from_slice(&((cursor % SECTOR) as u16).to_le_bytes());
+        out.extend_from_slice(&(span(cursor, len) as u16).to_le_bytes());
+        out.extend_from_slice(&((len & 0xFFFF) as u16).to_le_bytes());
+        cursor += len + padding_len(len);
+    }
+    Ok(out)
+}
+
 /// Writes a container. Entries are padded with 0xFF to the next 8-byte boundary, the last one too.
 pub fn write(entries: &[&[u8]]) -> Result<Vec<u8>, Error> {
     let count = u16::try_from(entries.len()).map_err(|_| Error::TooLarge)?;

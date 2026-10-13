@@ -24,13 +24,35 @@ use alloc::string::String;
 use alloc::vec::Vec;
 use core::fmt;
 
+/// Builds one language pair from its lines, without their line endings. Returns the offset table
+/// and the text. Each line is written with CR LF after it. The table has one start per line, then
+/// the text length twice, then the sentinel.
+pub fn build_pair(lines: &[&[u8]]) -> Result<(Vec<u8>, Vec<u8>), Error> {
+    let mut text = Vec::new();
+    let mut starts = Vec::with_capacity(lines.len() + 1);
+    for (index, line) in lines.iter().enumerate() {
+        if line.iter().any(|&byte| byte == b'\r' || byte == b'\n') {
+            return Err(Error::BadLine { index });
+        }
+        starts.push(text.len() as u32);
+        text.extend_from_slice(line);
+        text.extend_from_slice(b"\r\n");
+    }
+    let length = text.len() as u32;
+    starts.push(length);
+    let mut table = Vec::with_capacity((starts.len() + 2) * 4);
+    for value in starts.iter().copied().chain([length, SENTINEL]) {
+        table.extend_from_slice(&value.to_be_bytes());
+    }
+    Ok((table, text))
+}
+
 /// The value that ends the offset table. Read as the first offset of a slot that has no text.
 pub const SENTINEL: u32 = 0xFFFF_FFFF;
 
 /// Errors from reading a script text file.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum Error {
-    /// The table is not a whole number of u32 values.
     /// The table is not a whole number of 4-byte offsets.
     BadTableLength {
         /// The length of the table in bytes.
@@ -44,7 +66,11 @@ pub enum Error {
         /// The slot whose offsets are wrong.
         slot: usize,
     },
-    /// A line is not UTF-8.
+    /// A line holds a CR or LF, which would end it early.
+    BadLine {
+        /// The index of the line.
+        index: usize,
+    },
     /// A line is not valid UTF-8.
     NotUtf8 {
         /// The line number of the text.
@@ -68,6 +94,7 @@ impl fmt::Display for Error {
             Error::BadOffsets { slot } => write!(f, "offset table is inconsistent at slot {slot}"),
             Error::NotUtf8 { line } => write!(f, "line {line} is not UTF-8"),
             Error::NoSuchPair { pair } => write!(f, "no language pair {pair}"),
+            Error::BadLine { index } => write!(f, "line {index} holds a CR or LF"),
         }
     }
 }

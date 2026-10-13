@@ -90,3 +90,16 @@ fn random_tables_never_panic() {
         }
     }
 }
+
+#[test]
+fn built_pair_parses_back_to_its_lines() {
+    use crate::{build_pair, Error, Pair};
+    let lines: [&[u8]; 3] = [b"first", b"", "second \u{3042}".as_bytes()];
+    let (table, text) = build_pair(&lines).unwrap();
+    assert_eq!(table.len(), (lines.len() + 3) * 4);
+    let pair = Pair::parse(&table, &text).unwrap();
+    assert_eq!(pair.len(), lines.len());
+    assert_eq!(pair.lines().unwrap(), ["first", "", "second \u{3042}"]);
+    assert_eq!(build_pair(&[b"a\nb"]), Err(Error::BadLine { index: 0 }));
+    assert_eq!(build_pair(&[b"a\rb"]), Err(Error::BadLine { index: 0 }));
+}
