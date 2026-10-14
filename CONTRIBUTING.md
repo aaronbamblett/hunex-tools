@@ -50,7 +50,7 @@ HUNEX_CHS_DIR=/path/to/chs HUNEX_WORK=/var/tmp/hunex-work cargo test -p hunex-ch
 
 | Variable | Points at | Tests that read it | Unset behavior |
 |---|---|---|---|
-| `HUNEX_CHS_DIR` | A folder of `.chs` script files. | `hunex-chs` `real_files`, `relocation`; `hunex-cli` `chs_asm_round_trip` | Skipped with a message. |
+| `HUNEX_CHS_DIR` | A folder of `.chs` script files. | `hunex-chs` `real_files`, `relocation`, `compile_corpus`; `hunex-cli` `chs_asm_round_trip` | Skipped with a message. |
 | `HUNEX_HFA_DIR` | A folder of `data*.hfa` archives (`data00100.hfa`, `data00300.hfa`, `data01000.hfa` to `data01400.hfa`). | `hunex-cli` `hfa_real`, `font_real`, `audio_real`, `lenzu_compress` | Skipped with a message. |
 | `HUNEX_LENZU_DIR` | A folder of stored LenZu streams. | `hunex-cli` `lenzu_compress`, `lenzu_envelope` | Skipped with a message. |
 | `HUNEX_CTD_DIR` | A folder with the four stored `.ctd` entries. | `hunex-ctd` `real_ctd`; `hunex-cli` `ctd_real` | Skipped with a message. |
@@ -67,6 +67,12 @@ HUNEX_CHS_DIR=/path/to/chs HUNEX_WORK=/var/tmp/hunex-work cargo test -p hunex-ch
 | `HUNEX_SWITCH_SET_B` | A folder with the set B Switch sets (`jallpac.hed`, `.mrg`, `.nam`). | `hunex-cli` `switch_mrg_write` | Skipped with a message. |
 | `HUNEX_BC3_DIR` | A folder of MRG sets, scanned for BC3 textures. | `hunex-cli` `bc3_scan` | Skipped with a message. |
 | `HUNEX_WORK` | A scratch folder for test output. Use a folder under `/var/tmp`. | `hunex-cli` `hfa_real`, `font_real`, `audio_real`, `ctd_real`, `switch_real`, `bc3_scan` | Checks that write output are skipped with a message. |
+| `HUNEX_SWITCH_SCRIPT_DIR` | The Switch dump folder (`scr0000.txt`..`scr0248.txt`). | `hunex-chs` `compile_corpus` | The script checks are skipped with a message. |
+| `HUNEX_COMPILE_EXPECTED` | The `expected-counts.json` statement totals. | `hunex-chs` `compile_corpus` | The per-scene statement comparison is skipped. |
+| `HUNEX_COMPILE_SCENES` | The `scene-order.json` fixture: 249 scene names in `scr` order. | `hunex-chs` `compile_corpus` | The compile comparison is skipped with a message. |
+| `HUNEX_COMPILE_SCENE_NUMBERS` | The `scene-numbers.json` fixture: `_JUMP` number to Steam name. | `hunex-chs` `compile_corpus` | The compile comparison is skipped with a message. |
+| `HUNEX_COMPILE_AUTHORED` | The reviewed `authored-diffs-v2.json` manifest. | `hunex-chs` `compile_corpus` | The compile comparison is skipped with a message. |
+| `HUNEX_COMPILE_EXPECTED_CLASSES` | The `expected-classes.json` fixture: expected class per scene. | `hunex-chs` `compile_corpus` | The compile comparison is skipped with a message. |
 | `HUNEX_UPDATE_DOCS` | Set to `1` to rewrite `docs/formats/opcodes.md` from the opcode table. | `hunex-chs` `opcodes_doc` | The test fails if the file is out of date. |
 
 ## Clean-room policy
