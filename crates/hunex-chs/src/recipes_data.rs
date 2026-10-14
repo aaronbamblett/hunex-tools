@@ -4670,6 +4670,47 @@ static _SESP_RECIPES: &[Recipe] = &[
         target_slots: 0,
         zero_unproven: false,
     },
+    Recipe {
+        id: "_SESP:slot",
+        when: When {
+            arity: Some(1),
+            arity_range: None,
+            equals: &[],
+            kinds: &[(0, ValueKind::Int)],
+            one_of: &[(
+                0,
+                &[
+                    "0", "1", "2", "3", "4", "5", "6", "7", "8", "9", "10", "11", "12", "13", "14",
+                    "15", "16", "17", "18", "19",
+                ],
+            )],
+            tag_codes: &[],
+            state: &[],
+        },
+        fields: &[],
+        body: &[
+            BodyPart::Lit(&[LitInstr {
+                opcode: 0,
+                operands: &[LitOp::Num(0)],
+            }]),
+            BodyPart::Lit(&[LitInstr {
+                opcode: 0,
+                operands: &[LitOp::Num(0)],
+            }]),
+            BodyPart::Arg {
+                arg: 0,
+                encoder: Encoder::Value,
+            },
+        ],
+        calls: &[404],
+        special: None,
+        set_state: &[],
+        platform_value: None,
+        platform_call: None,
+        target_field: 1,
+        target_slots: 0,
+        zero_unproven: false,
+    },
 ];
 static _SEVL_RECIPES: &[Recipe] = &[
     Recipe {
@@ -7463,6 +7504,74 @@ static _STCL_RECIPES: &[Recipe] = &[
                 opcode: 0,
                 operands: &[LitOp::Num(2147483648)],
             }]),
+            BodyPart::Arg {
+                arg: 1,
+                encoder: Encoder::Value,
+            },
+            BodyPart::Arg {
+                arg: 0,
+                encoder: Encoder::Value,
+            },
+        ],
+        calls: &[579],
+        special: None,
+        set_state: &[],
+        platform_value: None,
+        platform_call: None,
+        target_field: 1,
+        target_slots: 0,
+        zero_unproven: false,
+    },
+    Recipe {
+        id: "_STCL:eight",
+        when: When {
+            arity: Some(8),
+            arity_range: None,
+            equals: &[(0, "0")],
+            kinds: &[
+                (0, ValueKind::Int),
+                (1, ValueKind::Int),
+                (2, ValueKind::Int),
+                (3, ValueKind::Int),
+                (4, ValueKind::Int),
+                (5, ValueKind::Int),
+                (6, ValueKind::Int),
+                (7, ValueKind::Int),
+            ],
+            one_of: &[],
+            tag_codes: &[],
+            state: &[],
+        },
+        fields: &[],
+        body: &[
+            BodyPart::Lit(&[LitInstr {
+                opcode: 0,
+                operands: &[LitOp::Num(0)],
+            }]),
+            BodyPart::Arg {
+                arg: 7,
+                encoder: Encoder::Value,
+            },
+            BodyPart::Arg {
+                arg: 6,
+                encoder: Encoder::Value,
+            },
+            BodyPart::Arg {
+                arg: 5,
+                encoder: Encoder::Value,
+            },
+            BodyPart::Arg {
+                arg: 4,
+                encoder: Encoder::Value,
+            },
+            BodyPart::Arg {
+                arg: 3,
+                encoder: Encoder::Value,
+            },
+            BodyPart::Arg {
+                arg: 2,
+                encoder: Encoder::Value,
+            },
             BodyPart::Arg {
                 arg: 1,
                 encoder: Encoder::Value,

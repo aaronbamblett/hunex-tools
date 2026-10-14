@@ -93,3 +93,28 @@ The decoder reports: bad magic, truncated data, a malformed header, an unregiste
 - The 0x7B counter (its second dword) is kept as a plain dword. Its meaning is unknown, and edits do not renumber it.
 - The stack effect of each opcode and the operands of most commands are not modeled.
 - Whether the game accepts a script whose code is not in the sample layout, beyond the edited scripts above.
+
+### Additional source shapes (static handler evidence)
+
+Checked in the Steam image, not in game: `_SESP(slot)` for literal slots 0–19
+pushes zero delay, zero fade and the slot, then calls 0x194. Its handler at
+`0x140107ab0` pops slot/fade/delay at `0x140107acc`, `0x140107add` and
+`0x140107af2`. Higher slots need the source modulo-20 behavior; this recipe
+does not accept them. The existing negative-slot recipe keeps precedence.
+
+Eight-integer `_STCL(0,slot,x0,y0,x1,y1,duration,delay)` pushes a numeric zero
+coordinate pointer followed by the eight fields in reverse order, then 0x243.
+The handler at `0x140102240` pops eight words and a pointer
+(`0x140102273–0x1401022e6`). The setter at `0x140101f20` distinguishes a null
+coordinate pointer (`0x140102134–0x1401021a6`) from a supplied coordinate string.
+The source's absent coordinate field takes its default half-size path
+(Mahoyo Switch `0x42b38–0x42b5c`); an empty string or `CC` would select a
+different path. Existing seven- and nine-field recipes keep precedence.
+
+The remaining SELD selection index, VCWT wait, FADE effect codes and STCH
+fields beyond 17 have no established Steam lowering. SELD 0x161 at
+`0x140049c20` pops four words into object offsets 0x70/0x74/0x78/0x7c
+(`0x140049c5d–0x140049c8a`, `0x140049e0f–0x140049e1b`); those reads alone do
+not establish a mapping for the source's persistent selection index. STCH
+0x240 at `0x140101610` supplies literal -1 to its setter at `0x14010178b`.
+Do not append stack operands to that opcode or discard the source values.
