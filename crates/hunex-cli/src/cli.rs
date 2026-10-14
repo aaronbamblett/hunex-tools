@@ -21,7 +21,7 @@ Usage:
   hunex --version
 
 Formats:
-  chs     compiled scripts (.chs): dump, roundtrip, asm
+  chs     compiled scripts (.chs): dump, roundtrip, asm, compile
   hfa     script archives (.hfa): list, unpack, pack
   lenzu   LenZu compressed streams: decompress, compress
   ctd     script text (.ctd): export, import, get

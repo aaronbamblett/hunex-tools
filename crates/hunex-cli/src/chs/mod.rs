@@ -1,6 +1,7 @@
 //! HuneX compiled scripts (`.chs`): listing, round-trip checks and the text form.
 
 pub mod asm;
+pub mod compile;
 mod dump;
 
 use std::fs;
@@ -20,6 +21,8 @@ Usage:
   hunex chs dump --asm <file.chs>       print the text form (re-assemblable)
   hunex chs roundtrip <file.chs>        re-encode and compare with the file
   hunex chs asm <in.txt> -o <out.chs>   assemble the text form into a script
+  hunex chs compile <script.txt> (--names <nam.bin> | --scene-map <map.txt>) -o <out.chs> [--warnings all]
+                                        compile Switch text to a script
   hunex chs help                        this text
 ";
 
@@ -37,6 +40,7 @@ pub fn run(args: &[String]) -> ExitCode {
         Some("dump") => dump::run(&args[1..]),
         Some("roundtrip") => roundtrip(&args[1..]),
         Some("asm") => assemble(&args[1..]),
+        Some("compile") => compile::run(&args[1..]),
         Some(other) => {
             eprintln!("hunex chs: unknown command `{other}`");
             usage(HELP)
