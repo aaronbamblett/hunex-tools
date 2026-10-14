@@ -84,6 +84,28 @@ fn cktt_keeps_leading_zeros_as_six() {
 }
 
 #[test]
+fn sbas_pushes_parent_then_child_and_calls_0x25c() {
+    assert_eq!(
+        statement_list("_SBAS(6,5);", &[]),
+        vec![
+            ins(0, vec![num(5)]),
+            ins(0, vec![num(6)]),
+            ins(0x25C, vec![])
+        ]
+    );
+    assert_eq!(
+        statement_list("_SBAS(37,-1);", &[]),
+        vec![
+            ins(0, vec![num(0)]),
+            ins(0, vec![num(1)]),
+            ins(0x21, vec![]),
+            ins(0, vec![num(37)]),
+            ins(0x25C, vec![]),
+        ]
+    );
+}
+
+#[test]
 fn negative_integers_emit_zero_minus_and_sub() {
     assert_eq!(
         statement_list("_TTCT(-1);", &[]),

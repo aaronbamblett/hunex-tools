@@ -1863,6 +1863,37 @@ static _SACL_RECIPES: &[Recipe] = &[Recipe {
     target_slots: 0,
     zero_unproven: false,
 }];
+static _SBAS_RECIPES: &[Recipe] = &[Recipe {
+    id: "_SBAS:0",
+    when: When {
+        arity: Some(2),
+        arity_range: None,
+        equals: &[],
+        kinds: &[(0, ValueKind::Int), (1, ValueKind::Int)],
+        one_of: &[],
+        tag_codes: &[],
+        state: &[],
+    },
+    fields: &[],
+    body: &[
+        BodyPart::Arg {
+            arg: 1,
+            encoder: Encoder::Value,
+        },
+        BodyPart::Arg {
+            arg: 0,
+            encoder: Encoder::Value,
+        },
+    ],
+    calls: &[604],
+    special: None,
+    set_state: &[],
+    platform_value: None,
+    platform_call: None,
+    target_field: 1,
+    target_slots: 0,
+    zero_unproven: false,
+}];
 static _SCH2_RECIPES: &[Recipe] = &[Recipe {
     id: "_SCH2:0",
     when: When {
@@ -10591,6 +10622,10 @@ pub static COMMANDS: &[CommandTable] = &[
     CommandTable {
         name: "_SACL",
         recipes: _SACL_RECIPES,
+    },
+    CommandTable {
+        name: "_SBAS",
+        recipes: _SBAS_RECIPES,
     },
     CommandTable {
         name: "_SCH2",

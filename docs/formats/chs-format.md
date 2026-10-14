@@ -29,7 +29,7 @@ The variant name comes from the magic string. In the samples the Hunex variant h
 
 ### Code
 
-Code starts at the code base and is a sequence of instructions. Each instruction is an opcode dword followed by a fixed number of inline operand dwords, given by the opcode table (see [opcodes.md](opcodes.md)). The table holds 158 registered ids: 71 base opcodes up to 0xFE and 87 commands from 0x100. An unregistered id is an error.
+Code starts at the code base and is a sequence of instructions. Each instruction is an opcode dword followed by a fixed number of inline operand dwords, given by the opcode table (see [opcodes.md](opcodes.md)). The table holds 159 ids: 71 base opcodes up to 0xFE and 88 commands from 0x100. The Steam executable registers all of them except 0x25C, which a patched executable adds (see `_SBAS` below). An id outside the table is an error.
 
 - Opcode 0x7B is followed by three inline dwords that the interpreter skips. In 23,139 of the 23,209 places where 0x7B occurs, the first dword after it is 0x12345678. Its meaning is open.
 - Opcode 0x7F has two inline dwords: a string pointer to a source file name, and a line number.
@@ -110,6 +110,14 @@ coordinate pointer (`0x140102134–0x1401021a6`) from a supplied coordinate stri
 The source's absent coordinate field takes its default half-size path
 (Mahoyo Switch `0x42b38–0x42b5c`); an empty string or `CC` would select a
 different path. Existing seven- and nine-field recipes keep precedence.
+
+`_SBAS(child,parent)` pushes the parent, then the child, and calls 0x25C.
+The stock Steam executable does not register 0x25C: its registration chain
+(`0x1401066b0–0x140106a6e`) skips 0x25C–0x26F, and the table it fills is
+zero-filled when allocated (`0x14007a446–0x14007a45d`). A script that uses `_SBAS` runs only
+with an executable patched to register a handler that pops the child and then
+the parent. The source handler stores the parent per child slot (Tsukihime
+Switch `0x797b8–0x7981c`).
 
 The remaining SELD selection index, VCWT wait, FADE effect codes and STCH
 fields beyond 17 have no established Steam lowering. SELD 0x161 at
