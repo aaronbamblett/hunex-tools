@@ -65,6 +65,14 @@ A file without any string pointer has no pool start, so its code must run exactl
 
 `lift` replaces raw pointers with typed operands: a label for each code pointer target and a string id for each string operand. `lower` recomputes all pointers from the symbolic form, and its pool layout rule is described in [asm-format.md](asm-format.md).
 
+### Source text and normalized form
+
+Checked on sample files: the `source` parser reads all 249 Switch scripts into 493,227 statements (including 14 malformed `_KWRS` tokens), matching the reference parser statement for statement. The `normalize` helper drops every Debug instruction and resolves string and jump targets, which is the form used to compare compiler output against the sample files.
+
+The `compile` lowering covers the engine recipe table (prologue dispatch, labels, conditionals, jumps, messages, typed encoders, epilogue return) and compares against all 249 scenes with identical per-scene classes. The three counts are cumulative: 162 scenes match exactly, 216 including shape matches (source-numeric drift only), and 242 including reviewed authored edits. Jump targets normalize to their own operand variant so a target never compares equal to a literal number.
+
+To compile one Switch script, run `hunex chs compile <script.txt> --scene-map <map.txt> -o <out.chs>`: the general scene number map is a UTF-8 text file with one `<number> <scene name>` per line (blank lines and `#` comment lines allowed). For the Mahoyo Switch layout, `--names <nam.bin>` is a convenience: the scene names come from the Switch `nam.bin` (32-byte records; records 1–137 add 199, 138–150 add 362, 151–219 add 849, 220–245 add 1780, record 247 is scene 4000). The output uses the Steam header layout with a Debug-free program and a first-use string pool. Selecting a zero-emission predicate that is not proven on the corpus prints a warning to stderr; the selection still emits nothing.
+
 ### Errors
 
 The decoder reports: bad magic, truncated data, a malformed header, an unregistered opcode (with its offset), a walk that does not end on a return at the pool start, a string pointer that does not name a string, a code pointer that does not land on an instruction (during lifting), and invalid UTF-8 when reading text.

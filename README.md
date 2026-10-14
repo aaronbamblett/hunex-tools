@@ -30,7 +30,7 @@ Each row links to its format note, which gives the details and the open question
 
 | Format | Crate | Read | Write | Result |
 |---|---|---|---|---|
-| [Compiled scripts (`.chs`)](docs/formats/chs-format.md) | `hunex-chs` | Yes | Yes, with pointer relocation | Verified in game: edited scripts, with moved pointers and changed strings, play through. |
+| [Compiled scripts (`.chs`)](docs/formats/chs-format.md) | `hunex-chs` | Yes | Yes, with pointer relocation; `chs compile` builds a script from Switch text | Verified in game: edited scripts, with moved pointers and changed strings, play through; a scene compiled from Switch text plays through in game. |
 | [Script archives (HFA)](docs/formats/hfa-format.md) | `hunex-hfa` | Yes | Yes | Verified in game: five archives with changed entry sizes and offsets, rebuilt with `pack --base`, load. |
 | [LenZu streams](docs/formats/lenzu-format.md) | `hunex-lenzu` | Yes | Yes | Verified in game: literal-only and compressed output both load. |
 | [Script text (`.ctd`)](docs/formats/ctd-format.md) | `hunex-ctd` | Yes | Yes | Verified in game: an edited line of a different length displays, with a literal-only entry and a compressed one. |
@@ -69,6 +69,7 @@ hunex hfa unpack archive.hfa -o work --decompress    # write them to work/
 hunex chs dump --asm work/script.chs > script.txt    # the script as text
 # edit script.txt, for example the text of one string line
 hunex chs asm script.txt -o work/script.chs          # assemble it again
+hunex chs compile switch.txt --names nam.bin -o work/compiled.chs # compile Switch text (a scene compiled this way plays through in game)
 hunex hfa pack work -o edited.hfa --base archive.hfa # rebuild the archive
 ```
 

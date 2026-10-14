@@ -34,7 +34,7 @@ Write output to a folder in your work area, never into the game install. See the
 
 ## chs: compiled scripts (.chs)
 
-Dumps, checks and assembles `.chs` scripts. See [chs-format.md](formats/chs-format.md).
+Dumps, checks, assembles and compiles `.chs` scripts. See [chs-format.md](formats/chs-format.md).
 
 ### chs dump
 
@@ -69,6 +69,23 @@ Usage: `hunex chs asm <in.txt> -o <out.chs>`
 | `-o <out.chs>` | The script to write. Required. |
 
 Example: `hunex chs asm script.txt -o script.chs`
+
+### chs compile
+
+Compile Switch script text to a Steam script. The script text is the Switch format with no comments: every statement is `_NAME(arguments);`.
+
+Usage: `hunex chs compile <script.txt> (--names <nam.bin> | --scene-map <map.txt>) -o <out.chs> [--warnings all]`
+
+| Option | Purpose |
+|---|---|
+| `--names <nam.bin>` | The Mahoyo Switch scene names file; `_JUMP` numbers resolve per the Mahoyo record table in [chs-format.md](formats/chs-format.md). Exactly one of `--names` and `--scene-map` is required. |
+| `--scene-map <map.txt>` | A general scene number map: UTF-8 text with one `<number> <scene name>` per line. Blank lines and `#` comment lines are allowed. Exactly one of `--names` and `--scene-map` is required. |
+| `--warnings all` | Print every unproven zero-emission selection with its `line:column`. Without it, one summary line per command is printed instead. |
+| `-o <out.chs>` | The script to write. Required. |
+
+Selections of zero-emission predicates that are not proven on the corpus print to stderr but still compile: by default one summary line per command, such as `warning: 627 statements use zero-emission rules not proven on the corpus: _WKST 410, _WNTY 120`. Errors print the `line:column` position (1-based) and exit non-zero.
+
+Example: `hunex chs compile scr0001.txt --names nam.bin -o 1_0.chs`
 
 ### chs help
 
