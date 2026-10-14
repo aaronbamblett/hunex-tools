@@ -58,6 +58,8 @@ pub enum StateKey {
 pub enum Encoder {
     /// Numeric expressions, string pushes for text/image/symbol, or flag reads.
     Value,
+    /// Parse a numeric field directly, including hexadecimal spellings.
+    Number,
     /// A raw string push regardless of parsed kind.
     Str,
     /// One flag index push, without the read.
@@ -158,6 +160,8 @@ pub struct When {
     pub kinds: &'static [(usize, ValueKind)],
     /// Zero-based argument indices pinned to allowed raw strings.
     pub one_of: &'static [(usize, &'static [&'static str])],
+    /// Zero-based argument indices pinned to a tag code and one payload.
+    pub tag_codes: &'static [(usize, &'static str)],
     /// Exact compile-state values.
     pub state: &'static [(StateKey, i64)],
 }

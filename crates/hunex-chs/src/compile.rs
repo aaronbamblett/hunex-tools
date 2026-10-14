@@ -504,6 +504,17 @@ impl<'a> Builder<'a> {
     ) -> Result<(), CompileError> {
         let bad = self.error(statement, CompileErrorKind::BadEncoder);
         match encoder {
+            Encoder::Number => {
+                let number = parse_int_str(value.raw()).ok_or_else(|| bad.clone())?;
+                self.push_int(
+                    number,
+                    owner,
+                    statement,
+                    field,
+                    SlotEncoder::Value,
+                    value.raw(),
+                )?;
+            }
             Encoder::Str => self.push_str(value.raw().as_bytes(), owner),
             Encoder::FlagIndex => match value {
                 Value::Flag { index, .. } => self.push_dword(*index, owner),
@@ -717,6 +728,12 @@ fn matches(recipe: &crate::recipes::Recipe, statement: &Statement, builder: &Bui
         if args
             .get(*index)
             .is_none_or(|value| !allowed.contains(&value.raw()))
+        {
+            return false;
+        }
+    }
+    for (index, code) in when.tag_codes {
+        if !matches!(args.get(*index), Some(Value::Tag { tag, parts, .. }) if tag == code && parts.len() == 1)
         {
             return false;
         }
