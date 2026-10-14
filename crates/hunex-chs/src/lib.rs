@@ -4,6 +4,9 @@
 //! [`Script::encode`] rebuilds the file from those parts; for a parsed file it returns the
 //! original bytes exactly.
 //!
+//! The [`source`] module parses Switch script text into statements, and the [`normalize`]
+//! module reduces a [`Program`] to the Debug-free form used to compare against real files.
+//!
 //! Known limit: the code section has no explicit length. The string pool is taken to start
 //! at the smallest string pointer (code base plus pointer), and the walk must end on a return
 //! exactly there. A crafted file whose smallest pointer targets a return in the middle of the
@@ -26,10 +29,23 @@
 
 extern crate alloc;
 
+pub mod compare;
+#[cfg(test)]
+mod compare_tests;
+pub mod compile;
+#[cfg(test)]
+mod compile_tests;
+pub mod normalize;
+#[cfg(test)]
+mod normalize_tests;
 mod opcodes;
 mod program;
 #[cfg(test)]
 mod program_tests;
+pub mod recipes;
+pub mod source;
+#[cfg(test)]
+mod source_tests;
 #[cfg(test)]
 mod tests;
 
