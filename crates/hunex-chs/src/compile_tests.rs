@@ -96,6 +96,12 @@ fn stcg_image_and_symbol_names_compile_to_the_same_bytes() {
 }
 
 #[test]
+fn stcg_rejects_a_non_name_argument() {
+    let statements = source::parse("_STCG(5);").unwrap();
+    assert!(compile(&statements, &[]).is_err());
+}
+
+#[test]
 fn sbas_pushes_parent_then_child_and_calls_0x25c() {
     assert_eq!(
         statement_list("_SBAS(6,5);", &[]),

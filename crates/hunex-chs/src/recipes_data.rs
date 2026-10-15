@@ -7144,31 +7144,58 @@ static _STCF_RECIPES: &[Recipe] = &[Recipe {
     target_slots: 0,
     zero_unproven: false,
 }];
-static _STCG_RECIPES: &[Recipe] = &[Recipe {
-    id: "_STCG:0",
-    when: When {
-        arity: Some(1),
-        arity_range: None,
-        equals: &[],
-        kinds: &[],
-        one_of: &[],
-        tag_codes: &[],
-        state: &[],
+static _STCG_RECIPES: &[Recipe] = &[
+    Recipe {
+        id: "_STCG:0",
+        when: When {
+            arity: Some(1),
+            arity_range: None,
+            equals: &[],
+            kinds: &[(0, ValueKind::Image)],
+            one_of: &[],
+            tag_codes: &[],
+            state: &[],
+        },
+        fields: &[],
+        body: &[BodyPart::Arg {
+            arg: 0,
+            encoder: Encoder::Value,
+        }],
+        calls: &[552],
+        special: None,
+        set_state: &[],
+        platform_value: None,
+        platform_call: None,
+        target_field: 1,
+        target_slots: 0,
+        zero_unproven: false,
     },
-    fields: &[],
-    body: &[BodyPart::Arg {
-        arg: 0,
-        encoder: Encoder::Value,
-    }],
-    calls: &[552],
-    special: None,
-    set_state: &[],
-    platform_value: None,
-    platform_call: None,
-    target_field: 1,
-    target_slots: 0,
-    zero_unproven: false,
-}];
+    Recipe {
+        id: "_STCG:1",
+        when: When {
+            arity: Some(1),
+            arity_range: None,
+            equals: &[],
+            kinds: &[(0, ValueKind::Symbol)],
+            one_of: &[],
+            tag_codes: &[],
+            state: &[],
+        },
+        fields: &[],
+        body: &[BodyPart::Arg {
+            arg: 0,
+            encoder: Encoder::Value,
+        }],
+        calls: &[552],
+        special: None,
+        set_state: &[],
+        platform_value: None,
+        platform_call: None,
+        target_field: 1,
+        target_slots: 0,
+        zero_unproven: false,
+    },
+];
 static _STCH_RECIPES: &[Recipe] = &[Recipe {
     id: "_STCH:0",
     when: When {
