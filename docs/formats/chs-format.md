@@ -29,7 +29,7 @@ The variant name comes from the magic string. In the samples the Hunex variant h
 
 ### Code
 
-Code starts at the code base and is a sequence of instructions. Each instruction is an opcode dword followed by a fixed number of inline operand dwords, given by the opcode table (see [opcodes.md](opcodes.md)). The table holds 159 ids: 71 base opcodes up to 0xFE and 88 commands from 0x100. The Steam executable registers all of them except 0x25C, which a patched executable adds (see `_SBAS` below). An id outside the table is an error.
+Code starts at the code base and is a sequence of instructions. Each instruction is an opcode dword followed by a fixed number of inline operand dwords, given by the opcode table (see [opcodes.md](opcodes.md)). The table holds 160 ids: 71 base opcodes up to 0xFE and 89 commands from 0x100. The Steam executable registers all of them except 0x1C2 and 0x25C, which a patched executable adds (see `_TOMP` and `_SBAS` below). An id outside the table is an error.
 
 - Opcode 0x7B is followed by three inline dwords that the interpreter skips. In 23,139 of the 23,209 places where 0x7B occurs, the first dword after it is 0x12345678. Its meaning is open.
 - Opcode 0x7F has two inline dwords: a string pointer to a source file name, and a line number.
@@ -118,6 +118,12 @@ zero-filled when allocated (`0x14007a446–0x14007a45d`). A script that uses `_S
 with an executable patched to register a handler that pops the child and then
 the parent. The source handler stores the parent per child slot (Tsukihime
 Switch `0x797b8–0x7981c`).
+
+`_TOMP()` with no argument calls 0x1C0, which plays the fixed `opening_<language>.mp4`
+movie (Steam `0x140106ab0`). `_TOMP(n)` with one integer pushes n and calls 0x1C2,
+a "play movie by index" command that the stock Steam executable does not
+register: its registration chain stops at 0x1C1 (`0x1400e7943`) and the next
+id it registers is 0x200. A patched executable must register a handler that pops n.
 
 The remaining SELD selection index, VCWT wait, FADE effect codes and STCH
 fields beyond 17 have no established Steam lowering. SELD 0x161 at

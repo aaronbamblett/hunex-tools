@@ -124,6 +124,15 @@ fn sbas_pushes_parent_then_child_and_calls_0x25c() {
 }
 
 #[test]
+fn tomp_with_an_index_calls_0x1c2_and_bare_tomp_keeps_0x1c0() {
+    assert_eq!(
+        statement_list("_TOMP(8);", &[]),
+        vec![ins(0, vec![num(8)]), ins(0x1C2, vec![])]
+    );
+    assert_eq!(statement_list("_TOMP();", &[]), vec![ins(0x1C0, vec![])]);
+}
+
+#[test]
 fn negative_integers_emit_zero_minus_and_sub() {
     assert_eq!(
         statement_list("_TTCT(-1);", &[]),
