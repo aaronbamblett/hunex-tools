@@ -18,7 +18,7 @@ pub struct Texture {
     pub image_size: usize,
     /// Alignment of the image data, as stored.
     pub alignment: usize,
-    /// The block layout code, as stored.
+    /// The block layout word at 0x34: the block height in GOBs is `1 << (layout & 7)`.
     pub layout: u32,
     /// Offset of the texture's data in the container.
     pub data_offset: usize,
@@ -121,7 +121,7 @@ impl<'a> Bntx<'a> {
             let format = u32_at(bytes, field(0x1C)?)?;
             let width = u32_at(bytes, field(0x24)?)? as usize;
             let height = u32_at(bytes, field(0x28)?)? as usize;
-            let layout = u32_at(bytes, field(0x38)?)?;
+            let layout = u32_at(bytes, field(0x34)?)?;
             let image_size = u32_at(bytes, field(0x50)?)? as usize;
             let alignment = (u32_at(bytes, field(0x54)?)? as usize).max(1);
             if width == 0 || height == 0 {

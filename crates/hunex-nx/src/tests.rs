@@ -1,4 +1,6 @@
 use super::*;
+use crate::decode::stored_size;
+use crate::deswizzle::GOB_BYTES;
 use alloc::vec;
 use alloc::vec::Vec;
 
@@ -92,7 +94,7 @@ fn bntx(format: u32, width: u32, height: u32, image_size: u32, data: &[u8]) -> V
     out[record + 0x1C..record + 0x20].copy_from_slice(&format.to_le_bytes());
     out[record + 0x24..record + 0x28].copy_from_slice(&width.to_le_bytes());
     out[record + 0x28..record + 0x2C].copy_from_slice(&height.to_le_bytes());
-    out[record + 0x38..record + 0x3C].copy_from_slice(&0x10007u32.to_le_bytes());
+    out[record + 0x34..record + 0x38].copy_from_slice(&0u32.to_le_bytes());
     out[record + 0x50..record + 0x54].copy_from_slice(&image_size.to_le_bytes());
     out[record + 0x54..record + 0x58].copy_from_slice(&512u32.to_le_bytes());
     out[0x180..0x184].copy_from_slice(b"BRTD");
@@ -134,6 +136,26 @@ fn bc4_block_decodes_to_gray() {
         .pixels
         .chunks(4)
         .all(|pixel| pixel == [255, 255, 255, 255]));
+}
+
+#[test]
+fn wait_icon_strip_uses_the_block_height_from_the_header() {
+    let (width_units, rows, cols) = (1024, 10, 128);
+    let size = stored_size(width_units * 8, rows, 1).unwrap();
+    assert_eq!(size, 2 * cols * GOB_BYTES);
+    let mut data = vec![0u8; size];
+    let block_row_8 = cols * GOB_BYTES;
+    for column in 0..8 {
+        data[block_row_8 + gob_offset(column, 0)] = if column == 0 { 255 } else { 0 };
+    }
+    let file = bntx(0x1D01, 4095, 39, size as u32, &data);
+    let image = decode_texture(&Bntx::parse(&file).unwrap(), 0).unwrap();
+    assert_eq!((image.width, image.height), (4095, 39));
+    let pixel = |x: usize, y: usize| image.pixels[(y * 4095 + x) * 4];
+    assert_eq!(pixel(0, 32), 255);
+    assert_eq!(pixel(3, 35), 255);
+    assert_eq!(pixel(0, 0), 0);
+    assert_eq!(pixel(4, 32), 0);
 }
 
 #[test]
