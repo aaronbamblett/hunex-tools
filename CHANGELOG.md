@@ -6,6 +6,7 @@
 - `hunex-chs` APIs: `source` parses Switch script text, `normalize` reduces a program to the Debug-free form used for comparison, `compile` lowers statements with the recipe table, and `compare` classifies a scene as exact, shape or authored.
 - Verified in game: a Mahoyo scene compiled from Switch text plays through in the Steam release of Witch on the Holy Night.
 - `hunex chs compile`: `_SBAS(child,parent)` lowers to opcode 0x25C, which only a patched executable registers. 0x25C is now in the opcode table.
+- `hunex chs compile`: `_FCSP(duration)` lowers to opcode 0x25E, which only a patched executable registers. 0x25E is now in the opcode table.
 - Corpus counts, cumulative over 249 Mahoyo scenes: 162 match exactly, 216 including retuned literals (shape), 242 including reviewed release edits (authored).
 
 ## 0.1.0

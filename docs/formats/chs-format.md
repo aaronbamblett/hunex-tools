@@ -29,7 +29,7 @@ The variant name comes from the magic string. In the samples the Hunex variant h
 
 ### Code
 
-Code starts at the code base and is a sequence of instructions. Each instruction is an opcode dword followed by a fixed number of inline operand dwords, given by the opcode table (see [opcodes.md](opcodes.md)). The table holds 159 ids: 71 base opcodes up to 0xFE and 88 commands from 0x100. The Steam executable registers all of them except 0x25C, which a patched executable adds (see `_SBAS` below). An id outside the table is an error.
+Code starts at the code base and is a sequence of instructions. Each instruction is an opcode dword followed by a fixed number of inline operand dwords, given by the opcode table (see [opcodes.md](opcodes.md)). The table holds 160 ids: 71 base opcodes up to 0xFE and 89 commands from 0x100. The Steam executable registers all of them except 0x25C and 0x25E, which a patched executable adds (see `_SBAS` and `_FCSP` below). An id outside the table is an error.
 
 - Opcode 0x7B is followed by three inline dwords that the interpreter skips. In 23,139 of the 23,209 places where 0x7B occurs, the first dword after it is 0x12345678. Its meaning is open.
 - Opcode 0x7F has two inline dwords: a string pointer to a source file name, and a line number.
@@ -118,6 +118,13 @@ zero-filled when allocated (`0x14007a446–0x14007a45d`). A script that uses `_S
 with an executable patched to register a handler that pops the child and then
 the parent. The source handler stores the parent per child slot (Tsukihime
 Switch `0x797b8–0x7981c`).
+
+`_FCSP(duration)` with one integer pushes it and calls 0x25E; `_FCSP()` keeps
+0x3A1. The stock 0x3A1 handler (`0x140106670`) reads no operand and stores a
+fixed 400 ms stop fade (`0x14010669f`). 0x25E is not registered by the stock
+executable; a patched executable registers a handler that pops the duration
+and stores it in place of the 400. The source handler reads operand 0 in ms
+(Tsukihime Switch `0x8f6d4–0x8f700`).
 
 The remaining SELD selection index, VCWT wait, FADE effect codes and STCH
 fields beyond 17 have no established Steam lowering. SELD 0x161 at

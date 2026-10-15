@@ -102,6 +102,15 @@ fn stcg_rejects_a_non_name_argument() {
 }
 
 #[test]
+fn fcsp_with_a_duration_pushes_it_and_calls_0x25e() {
+    assert_eq!(
+        statement_list("_FCSP(2000);", &[]),
+        vec![ins(0, vec![num(2000)]), ins(0x25E, vec![])]
+    );
+    assert_eq!(statement_list("_FCSP();", &[]), vec![ins(0x3A1, vec![])]);
+}
+
+#[test]
 fn sbas_pushes_parent_then_child_and_calls_0x25c() {
     assert_eq!(
         statement_list("_SBAS(6,5);", &[]),
