@@ -84,6 +84,18 @@ fn cktt_keeps_leading_zeros_as_six() {
 }
 
 #[test]
+fn stcg_image_and_symbol_names_compile_to_the_same_bytes() {
+    assert_eq!(
+        statement_list("_STCG(tsu_img0001);", &[]),
+        vec![ins(3, vec![text("tsu_img0001")]), ins(552, vec![])]
+    );
+    assert_eq!(
+        statement_list("_STCG(img0242);", &[]),
+        vec![ins(3, vec![text("img0242")]), ins(552, vec![])]
+    );
+}
+
+#[test]
 fn sbas_pushes_parent_then_child_and_calls_0x25c() {
     assert_eq!(
         statement_list("_SBAS(6,5);", &[]),

@@ -7150,7 +7150,7 @@ static _STCG_RECIPES: &[Recipe] = &[Recipe {
         arity: Some(1),
         arity_range: None,
         equals: &[],
-        kinds: &[(0, ValueKind::Image)],
+        kinds: &[],
         one_of: &[],
         tag_codes: &[],
         state: &[],
