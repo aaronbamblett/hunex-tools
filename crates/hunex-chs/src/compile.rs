@@ -1091,6 +1091,33 @@ pub fn compile(
     for (index, statement) in statements.iter().enumerate() {
         let start = builder.items.len();
         let owner = i64::try_from(index).unwrap_or(i64::MAX);
+        let mut music_start = None;
+        let mut music_statement = None;
+        if statement.name() == "_MPLY" {
+            let mut args = raw_args(statement);
+            if let Some(at) = args.iter().position(|arg| arg.starts_with("`069:")) {
+                let value = args[at][5..]
+                    .parse::<u32>()
+                    .ok()
+                    .filter(|value| *value <= 0x1fff_ffff)
+                    .ok_or_else(|| builder.error(index, CompileErrorKind::NumberOutOfRange))?;
+                args.remove(at);
+                if at > 1 && args[at - 1].is_empty() {
+                    args.remove(at - 1);
+                }
+                if args.iter().any(|arg| arg.starts_with("`069:")) {
+                    return Err(builder.error(index, CompileErrorKind::NoMatchingRecipe));
+                }
+                let text = alloc::format!("_MPLY({});", args.join(","));
+                music_statement = Some(
+                    crate::source::parse(&text)
+                        .map_err(|_| builder.error(index, CompileErrorKind::NoMatchingRecipe))?
+                        .remove(0),
+                );
+                music_start = Some(value);
+            }
+        }
+        let statement = music_statement.as_ref().unwrap_or(statement);
         let recipes = recipes::recipes_for(statement.name())
             .ok_or_else(|| builder.error(index, CompileErrorKind::UnknownCommand))?;
         let recipe = recipes
@@ -1110,6 +1137,20 @@ pub fn compile(
             });
         }
         builder.lower_special(recipe, statement, index, owner)?;
+        if let Some(position) = music_start {
+            if builder.items.len() != start + 6
+                || builder.items[start + 2] != Item::new(0, Vec::from([Operand::Dword(1)]))
+            {
+                return Err(builder.error(index, CompileErrorKind::InvalidProgram));
+            }
+            // The patched streamer extracts sample frames before restoring native loop mode.
+            let mode = if position == 0 {
+                1
+            } else {
+                0x8000_0001 | (position << 2)
+            };
+            builder.items[start + 2] = Item::new(0, Vec::from([Operand::Dword(mode)]));
+        }
         let raws = raw_args(statement);
         builder.apply_set_state(recipe, index, &raws)?;
         builder.spans.push((start, builder.items.len()));

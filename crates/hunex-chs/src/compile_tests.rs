@@ -510,3 +510,29 @@ fn masked_or_accepts_hexadecimal_operands() {
         );
     }
 }
+
+#[test]
+fn mply_start_offset_is_carried_in_mode_without_changing_fades_or_volume() {
+    assert_eq!(
+        statement_list("_MPLY(8,,`001:3000,,`017:80,,`069:502272);", &[]),
+        vec![
+            ins(0, vec![num(0)]),
+            ins(0, vec![num(3000)]),
+            ins(0, vec![num(0x8000_0001 | (502272 << 2))]),
+            ins(0, vec![num(80)]),
+            ins(0, vec![num(8)]),
+            ins(0x180, vec![]),
+        ]
+    );
+    assert_eq!(
+        statement_list("_MPLY(8,,`069:0);", &[]),
+        statement_list("_MPLY(8);", &[])
+    );
+    for src in [
+        "_MPLY(8,,`069:536870912);",
+        "_MPLY(8,,`069:-1);",
+        "_MPLY(8,,`069:1,,`069:2);",
+    ] {
+        assert!(compile(&crate::source::parse(src).unwrap(), &[]).is_err());
+    }
+}
