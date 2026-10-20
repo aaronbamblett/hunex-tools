@@ -8825,6 +8825,28 @@ static _TTCT_RECIPES: &[Recipe] = &[Recipe {
     target_slots: 0,
     zero_unproven: false,
 }];
+static _VCWT_RECIPES: &[Recipe] = &[Recipe {
+    id: "_VCWT:playback",
+    when: When {
+        arity: Some(0),
+        arity_range: None,
+        equals: &[],
+        kinds: &[],
+        one_of: &[],
+        tag_codes: &[],
+        state: &[],
+    },
+    fields: &[],
+    body: &[],
+    calls: &[608],
+    special: None,
+    set_state: &[],
+    platform_value: None,
+    platform_call: None,
+    target_field: 1,
+    target_slots: 0,
+    zero_unproven: false,
+}];
 static _VLOG_RECIPES: &[Recipe] = &[
     Recipe {
         id: "_VLOG:0",
@@ -8880,6 +8902,70 @@ static _VLOG_RECIPES: &[Recipe] = &[
             },
         ],
         calls: &[424],
+        special: None,
+        set_state: &[],
+        platform_value: None,
+        platform_call: None,
+        target_field: 1,
+        target_slots: 0,
+        zero_unproven: false,
+    },
+];
+static _VPL2_RECIPES: &[Recipe] = &[
+    Recipe {
+        id: "_VPL2:immediate",
+        when: When {
+            arity: Some(2),
+            arity_range: None,
+            equals: &[],
+            kinds: &[(0, ValueKind::Symbol), (1, ValueKind::Int)],
+            one_of: &[],
+            tag_codes: &[],
+            state: &[],
+        },
+        fields: &[],
+        body: &[
+            BodyPart::Lit(&[LitInstr {
+                opcode: 0,
+                operands: &[LitOp::Num(0)],
+            }]),
+            BodyPart::Arg {
+                arg: 0,
+                encoder: Encoder::Value,
+            },
+        ],
+        calls: &[416, 607],
+        special: None,
+        set_state: &[],
+        platform_value: None,
+        platform_call: None,
+        target_field: 1,
+        target_slots: 0,
+        zero_unproven: false,
+    },
+    Recipe {
+        id: "_VPL2:label",
+        when: When {
+            arity: Some(2),
+            arity_range: None,
+            equals: &[],
+            kinds: &[(0, ValueKind::Symbol), (1, ValueKind::Symbol)],
+            one_of: &[],
+            tag_codes: &[],
+            state: &[],
+        },
+        fields: &[],
+        body: &[
+            BodyPart::Lit(&[LitInstr {
+                opcode: 0,
+                operands: &[LitOp::Num(0)],
+            }]),
+            BodyPart::Arg {
+                arg: 0,
+                encoder: Encoder::Value,
+            },
+        ],
+        calls: &[416, 607],
         special: None,
         set_state: &[],
         platform_value: None,
@@ -10932,8 +11018,16 @@ pub static COMMANDS: &[CommandTable] = &[
         recipes: _TTCT_RECIPES,
     },
     CommandTable {
+        name: "_VCWT",
+        recipes: _VCWT_RECIPES,
+    },
+    CommandTable {
         name: "_VLOG",
         recipes: _VLOG_RECIPES,
+    },
+    CommandTable {
+        name: "_VPL2",
+        recipes: _VPL2_RECIPES,
     },
     CommandTable {
         name: "_VPLY",

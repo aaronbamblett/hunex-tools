@@ -536,3 +536,17 @@ fn mply_start_offset_is_carried_in_mode_without_changing_fades_or_volume() {
         assert!(compile(&crate::source::parse(src).unwrap(), &[]).is_err());
     }
 }
+
+#[test]
+fn voice_pair_stages_starts_then_waits() {
+    assert_eq!(
+        statement_list("_VPL2(VOICE,03d00);", &[]),
+        vec![
+            ins(0, vec![num(0)]),
+            ins(3, vec![text("VOICE")]),
+            ins(0x1a0, vec![]),
+            ins(0x25f, vec![]),
+        ]
+    );
+    assert_eq!(statement_list("_VCWT();", &[]), vec![ins(0x260, vec![])]);
+}
