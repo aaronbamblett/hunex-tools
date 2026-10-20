@@ -470,6 +470,12 @@ fn classify(raw: &str, offset: usize) -> Result<Value, ParseError> {
     if !raw.is_empty()
         && raw.chars().all(|cell| {
             cell.is_ascii_digit()
+                || (raw.contains("0x")
+                    && (raw
+                        .trim_start()
+                        .starts_with(|c: char| c.is_ascii_digit() || "+-(".contains(c))
+                        || raw.contains(['|', '&']))
+                    && "abcdefABCDEFx".contains(cell))
                 || cell.is_whitespace()
                 || ("+*/()%-".contains(cell)
                     || (raw.contains(['|', '&']) && "|&FG_D".contains(cell)))

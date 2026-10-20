@@ -1,6 +1,7 @@
 use super::compile::*;
 use super::normalize::{normalize, NormInstruction, NormOperand};
 use crate::source;
+use alloc::format;
 use alloc::string::String;
 use alloc::vec;
 use alloc::vec::Vec;
@@ -491,4 +492,21 @@ fn masked_persistent_or_reads_combines_and_stores() {
             ins(0xe9, vec![]),
         ]
     );
+}
+
+#[test]
+fn masked_or_accepts_hexadecimal_operands() {
+    for (operand, decimal) in [
+        ("1", 1),
+        ("2", 2),
+        ("0x2", 2),
+        ("0xff", 255),
+        ("0xABCD", 43981),
+    ] {
+        assert_eq!(
+            statement_list(&format!("_WKST(G016,eq,(G016|({operand}))&65535);"), &[]),
+            statement_list(&format!("_WKST(G016,eq,(G016|({decimal}))&65535);"), &[]),
+            "{operand}",
+        );
+    }
 }
