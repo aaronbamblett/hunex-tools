@@ -10174,6 +10174,49 @@ static _WKST_RECIPES: &[Recipe] = &[
         target_slots: 0,
         zero_unproven: false,
     },
+    Recipe {
+        id: "_WKST:expression",
+        when: When {
+            arity: Some(3),
+            arity_range: None,
+            equals: &[],
+            kinds: &[
+                (0, ValueKind::Flag),
+                (1, ValueKind::Symbol),
+                (2, ValueKind::Expression),
+            ],
+            one_of: &[],
+            tag_codes: &[],
+            state: &[],
+        },
+        fields: &[],
+        body: &[
+            BodyPart::Arg {
+                arg: 2,
+                encoder: Encoder::Value,
+            },
+            BodyPart::Arg {
+                arg: 1,
+                encoder: Encoder::Value,
+            },
+            BodyPart::Arg {
+                arg: 0,
+                encoder: Encoder::FlagIndex,
+            },
+            BodyPart::Arg {
+                arg: 0,
+                encoder: Encoder::FlagBank,
+            },
+        ],
+        calls: &[233],
+        special: None,
+        set_state: &[],
+        platform_value: None,
+        platform_call: None,
+        target_field: 1,
+        target_slots: 0,
+        zero_unproven: false,
+    },
 ];
 static _WNTY_RECIPES: &[Recipe] = &[
     Recipe {

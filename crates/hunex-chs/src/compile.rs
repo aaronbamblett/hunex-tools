@@ -438,6 +438,21 @@ impl<'a> Builder<'a> {
                 Task::Push(crate::source::Expr::Lit(value)) => {
                     self.push_int(*value, owner, statement, field, encoder, raw)?;
                 }
+                Task::Push(crate::source::Expr::Flag { index, bank }) => {
+                    self.push_dword(*index, owner);
+                    self.push_dword(u32::from(*bank), owner);
+                    self.push_call(OP_FLAG_READ, owner);
+                }
+                Task::Push(crate::source::Expr::Or(left, right)) => {
+                    stack.push(Task::Op(0x26));
+                    stack.push(Task::Push(right));
+                    stack.push(Task::Push(left));
+                }
+                Task::Push(crate::source::Expr::And(left, right)) => {
+                    stack.push(Task::Op(0x25));
+                    stack.push(Task::Push(right));
+                    stack.push(Task::Push(left));
+                }
                 Task::Push(crate::source::Expr::Neg(inner)) => {
                     stack.push(Task::Op(OP_SUB));
                     stack.push(Task::Push(inner));

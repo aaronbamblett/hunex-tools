@@ -472,3 +472,23 @@ fn string_pool_uses_first_use_order() {
     assert_eq!(strings[0], crate::recipes::PROLOGUE_ERROR.as_bytes());
     assert_eq!(strings[1], "1".as_bytes());
 }
+
+#[test]
+fn masked_persistent_or_reads_combines_and_stores() {
+    assert_eq!(
+        statement_list("_WKST(G016,eq,(G016|2)&65535);", &[]),
+        vec![
+            ins(0, vec![num(16)]),
+            ins(0, vec![num(1)]),
+            ins(0xea, vec![]),
+            ins(0, vec![num(2)]),
+            ins(0x26, vec![]),
+            ins(0, vec![num(65535)]),
+            ins(0x25, vec![]),
+            ins(3, vec![text("eq")]),
+            ins(0, vec![num(16)]),
+            ins(0, vec![num(1)]),
+            ins(0xe9, vec![]),
+        ]
+    );
+}
