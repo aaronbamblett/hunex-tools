@@ -1837,6 +1837,28 @@ static _RDST_RECIPES: &[Recipe] = &[Recipe {
     target_slots: 0,
     zero_unproven: false,
 }];
+static _RTM2_RECIPES: &[Recipe] = &[Recipe {
+    id: "_RTM2:0",
+    when: When {
+        arity: Some(0),
+        arity_range: None,
+        equals: &[],
+        kinds: &[],
+        one_of: &[],
+        tag_codes: &[],
+        state: &[],
+    },
+    fields: &[],
+    body: &[],
+    calls: &[609],
+    special: None,
+    set_state: &[],
+    platform_value: None,
+    platform_call: None,
+    target_field: 1,
+    target_slots: 0,
+    zero_unproven: false,
+}];
 static _RTM__RECIPES: &[Recipe] = &[Recipe {
     id: "_RTM_:0",
     when: When {
@@ -10824,6 +10846,10 @@ pub static COMMANDS: &[CommandTable] = &[
     CommandTable {
         name: "_RDST",
         recipes: _RDST_RECIPES,
+    },
+    CommandTable {
+        name: "_RTM2",
+        recipes: _RTM2_RECIPES,
     },
     CommandTable {
         name: "_RTM_",

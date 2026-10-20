@@ -550,3 +550,8 @@ fn voice_pair_stages_starts_then_waits() {
     );
     assert_eq!(statement_list("_VCWT();", &[]), vec![ins(0x260, vec![])]);
 }
+
+#[test]
+fn rtm2_preserves_music_without_returning() {
+    assert_eq!(statement_list("_RTM2();", &[]), vec![ins(0x261, vec![])]);
+}
