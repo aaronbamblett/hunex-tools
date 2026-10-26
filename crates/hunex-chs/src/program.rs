@@ -63,7 +63,7 @@ impl Item {
         Item { opcode, operands }
     }
 
-    /// The opcode.
+    /// The opcode id used to validate the operand count.
     pub fn opcode(&self) -> u32 {
         self.opcode
     }

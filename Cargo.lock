@@ -57,19 +57,19 @@ dependencies = [
 
 [[package]]
 name = "hunex-cbg"
-version = "0.1.0"
+version = "0.2.0"
 
 [[package]]
 name = "hunex-ccit"
-version = "0.1.0"
+version = "0.2.0"
 
 [[package]]
 name = "hunex-chs"
-version = "0.1.0"
+version = "0.2.0"
 
 [[package]]
 name = "hunex-cli"
-version = "0.1.0"
+version = "0.2.0"
 dependencies = [
  "hunex-cbg",
  "hunex-ccit",
@@ -91,25 +91,25 @@ dependencies = [
 
 [[package]]
 name = "hunex-ctd"
-version = "0.1.0"
+version = "0.2.0"
 dependencies = [
  "hunex-lenzu",
 ]
 
 [[package]]
 name = "hunex-hfa"
-version = "0.1.0"
+version = "0.2.0"
 
 [[package]]
 name = "hunex-hw"
-version = "0.1.0"
+version = "0.2.0"
 dependencies = [
  "hunex-ogg",
 ]
 
 [[package]]
 name = "hunex-image"
-version = "0.1.0"
+version = "0.2.0"
 dependencies = [
  "hunex-mzp",
  "hunex-mzx",
@@ -117,30 +117,30 @@ dependencies = [
 
 [[package]]
 name = "hunex-lenzu"
-version = "0.1.0"
+version = "0.2.0"
 
 [[package]]
 name = "hunex-mrg"
-version = "0.1.0"
+version = "0.2.0"
 
 [[package]]
 name = "hunex-mzp"
-version = "0.1.0"
+version = "0.2.0"
 
 [[package]]
 name = "hunex-mzx"
-version = "0.1.0"
+version = "0.2.0"
 
 [[package]]
 name = "hunex-nopus"
-version = "0.1.0"
+version = "0.2.0"
 dependencies = [
  "hunex-ogg",
 ]
 
 [[package]]
 name = "hunex-nx"
-version = "0.1.0"
+version = "0.2.0"
 dependencies = [
  "bcdec_rs",
  "miniz_oxide 0.9.1",
@@ -148,11 +148,11 @@ dependencies = [
 
 [[package]]
 name = "hunex-ogg"
-version = "0.1.0"
+version = "0.2.0"
 
 [[package]]
 name = "hunex-switch-text"
-version = "0.1.0"
+version = "0.2.0"
 
 [[package]]
 name = "miniz_oxide"

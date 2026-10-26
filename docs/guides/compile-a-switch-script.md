@@ -56,8 +56,8 @@ hunex chs compile work/compile/scr0001.txt --names work/compile/nam.bin -o work/
 Output (the first lines):
 
 ```text
-work/compile/scr0001.txt:1:1: _ZZ(): zero-emission predicate not proven on the corpus
-work/compile/scr0001.txt:1:12: _ZZ(START): zero-emission predicate not proven on the corpus
+work/compile/scr0001.txt:1:1: _ZZ(): zero-emission rule not proven on the corpus
+work/compile/scr0001.txt:1:12: _ZZ(START): zero-emission rule not proven on the corpus
 ```
 
 Positions are 1-based `line:column`. Errors use the same form and exit non-zero.

@@ -5,10 +5,6 @@
 //! string value, `0x7B` keeps its two numeric operands while its third pool operand
 //! becomes the string value, and `PushOffset` (`0x01`) label targets become the index
 //! of the target instruction after Debug removal. Everything else is preserved exactly.
-//! [`first_difference`] compares two lists and returns the first divergence.
-//!
-//! Jump and label targets use their own [`NormOperand::Target`] variant, never
-//! [`NormOperand::Num`], so a target index never compares equal to a literal number.
 //!
 //! ```
 //! use hunex_chs::{Item, Operand, Program, ProgramParts, Format};
@@ -61,7 +57,7 @@ impl NormInstruction {
         NormInstruction { opcode, operands }
     }
 
-    /// The opcode.
+    /// The original opcode id, preserved through normalization.
     pub fn opcode(&self) -> u32 {
         self.opcode
     }
@@ -150,20 +146,4 @@ pub fn normalize(program: &Program) -> Result<Vec<NormInstruction>, NormalizeErr
         });
     }
     Ok(out)
-}
-
-/// Returns the index of the first position where the two normalized lists differ.
-/// A length mismatch diverges at the end of the shorter list. Returns `None` when the
-/// lists hold identical instructions in order.
-pub fn first_difference(left: &[NormInstruction], right: &[NormInstruction]) -> Option<usize> {
-    let common = left.len().min(right.len());
-    for index in 0..common {
-        if left[index] != right[index] {
-            return Some(index);
-        }
-    }
-    if left.len() != right.len() {
-        return Some(common);
-    }
-    None
 }

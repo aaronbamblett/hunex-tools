@@ -2,12 +2,6 @@
 
 Source spelling: `_STRR(16,-1386)`.
 
-## Operands
-
-- Operands are zero-based.
-
-- It writes a signed centidegree angle at saved state `+0xbe4 + 2*slot` (store `0x632cc`), wraps angles to −17999…18000 and maps −99999 to −32768, then snapshots state and marks it dirty.
-
 ## Switch build
 
 [code] T `0x63190` accepts `(slot,clipAngle)` for slots 0…39. It writes a signed centidegree angle at saved state `+0xbe4 + 2*slot` (store `0x632cc`), wraps angles to −17999…18000 and maps −99999 to −32768, then snapshots state and marks it dirty. Draw-list T `0x861c4…0x861ec` takes the slot or parent angle. Renderer T `0x885c8…0x88840` uses rotated clip quads; zero uses axis-aligned scissor T `0xb1650`. It changes the clip window, independently of sprite rotation, and does not wait or request audio.
@@ -24,8 +18,4 @@ Source spelling: `_STRR(16,-1386)`.
 
 ## Unverified
 
-[inferred] Child/composite render hooks and exact inherited clip geometry remain unresolved. One runtime check: compare scr0038's 90-degree window with Switch while holding the image rotation fixed; the boundary must rotate independently and clip the child correctly (T `0x885c8`; S `0x14008aebb`).
-
----
-
-Engine facts here are lifted from the port's `docs/commands/STRR.md` (engine sections only); port conversion and patch notes are not carried over. Claims keep their [code]/[data]/[inferred] marks.
+[inferred] Child/composite render hooks and exact inherited clip geometry remain unresolved. Compare scr0038's 90-degree window with Switch while holding the image rotation fixed; the boundary must rotate independently and clip the child correctly (T `0x885c8`; S `0x14008aebb`).

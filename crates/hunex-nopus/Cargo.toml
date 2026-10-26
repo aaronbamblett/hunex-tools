@@ -11,4 +11,4 @@ categories = ["multimedia::audio", "no-std"]
 readme = "README.md"
 
 [dependencies]
-hunex-ogg = { path = "../hunex-ogg", version = "0.1.0" }
+hunex-ogg = { path = "../hunex-ogg", version = "0.2.0" }

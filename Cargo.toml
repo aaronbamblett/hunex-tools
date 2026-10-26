@@ -3,7 +3,7 @@ resolver = "2"
 members = ["crates/hunex-chs", "crates/hunex-cli", "crates/hunex-lenzu", "crates/hunex-hfa", "crates/hunex-ctd", "crates/hunex-ogg", "crates/hunex-hw", "crates/hunex-nopus", "crates/hunex-mzx", "crates/hunex-mzp", "crates/hunex-image", "crates/hunex-ccit", "crates/hunex-mrg", "crates/hunex-nx", "crates/hunex-switch-text", "crates/hunex-cbg"]
 
 [workspace.package]
-version = "0.1.0"
+version = "0.2.0"
 edition = "2021"
 license = "MIT"
 repository = "https://github.com/aaronbamblett/hunex-tools"
