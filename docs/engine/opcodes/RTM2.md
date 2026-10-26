@@ -2,15 +2,11 @@
 
 Source spelling: `_RTM2()`.
 
-## Operands
-
-- [code] Operandless **arm keep-music without returning**.
-
-- T `0x78ac4–0x78acc` writes nonzero byte `0x1354e6d` and continues at ordinary dispatch `0x76730`.
-
 ## Switch build
 
-- [code] Operandless **arm keep-music without returning**. T `0x78ac4–0x78acc` writes nonzero byte `0x1354e6d` and continues at ordinary dispatch `0x76730`. It does not execute RTM_'s return checks, draw/play or yield itself. The next teardown consumes the flag at `0x5ebbc`, bypassing music stop `0x99e70`.
+[code] Operandless arm keep-music without returning.
+
+- [code] T `0x78ac4–0x78acc` writes nonzero byte `0x1354e6d` and continues at ordinary dispatch `0x76730`. It does not execute RTM_'s return checks, draw/play or yield itself. The next teardown consumes the flag at `0x5ebbc`, bypassing music stop `0x99e70`.
 
 ## Steam build
 
@@ -23,7 +19,3 @@ Source spelling: `_RTM2()`.
 ## Unverified
 
 - [inferred] One scr0003 ending trace should confirm RDED executes after RTM2, then observe one flag consumption and continuous authored track 2 across the following return; an ordinary next return must clean music normally.
-
----
-
-Engine facts here are lifted from the port's `docs/commands/RTM2.md` (engine sections only); port conversion and patch notes are not carried over. Claims keep their [code]/[data]/[inferred] marks.
