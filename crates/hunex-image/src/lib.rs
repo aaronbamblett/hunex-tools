@@ -51,9 +51,8 @@ const HEP_CONSTANTS: [u32; 3] = [0x2530_0000, 6, 16];
 const HEP_TRANSPARENCY: u32 = 2;
 const DEFAULT_TILE: (usize, usize) = (512, 256);
 const DEFAULT_CROP: usize = 17;
-/// The most pixels in one canvas (64 Mpx, 256 MiB of RGBA). A larger header or image is an error,
-/// and it is checked before any canvas is allocated.
-pub const MAX_CANVAS_PIXELS: usize = 1 << 26;
+/// Allocation guard covering Tsukihime's largest padded canvas (11264x7680), within PC u32 RGBA sizes.
+pub const MAX_CANVAS_PIXELS: usize = 11_264 * 7_680;
 
 /// Maps a stored 7-bit alpha code to alpha: the code is doubled, with bit 6 copied into bit 0;
 /// codes with bit 7 set mean opaque.
@@ -102,6 +101,8 @@ pub enum Error {
     BadHeader {
         /// A header field has a value this crate does not accept.
         field: &'static str,
+        /// The offending width and height, when the header supplies them.
+        dimensions: Option<(usize, usize)>,
     },
     /// A header field has a value this crate does not decode.
     Unsupported {
@@ -137,7 +138,13 @@ impl fmt::Display for Error {
         match self {
             Error::Container(error) => write!(f, "{error}"),
             Error::Mzx(error) => write!(f, "{error}"),
-            Error::BadHeader { field } => write!(f, "image header: bad {field}"),
+            Error::BadHeader { field, dimensions } => {
+                write!(f, "image header: bad {field}")?;
+                if let Some((width, height)) = dimensions {
+                    write!(f, " ({width}x{height})")?;
+                }
+                Ok(())
+            }
             Error::Unsupported { field, value } => {
                 write!(f, "image header: unsupported {field} {value:#x}")
             }
@@ -233,7 +240,10 @@ impl Layout {
 /// Parses entry 0. Returns the layout and checks it against the entry length.
 pub fn parse_header(entry: &[u8]) -> Result<Layout, Error> {
     if entry.len() < HEADER_BYTES {
-        return Err(Error::BadHeader { field: "length" });
+        return Err(Error::BadHeader {
+            field: "length",
+            dimensions: None,
+        });
     }
     let word =
         |index: usize| usize::from(u16::from_le_bytes([entry[2 * index], entry[2 * index + 1]]));
@@ -243,7 +253,10 @@ pub fn parse_header(entry: &[u8]) -> Result<Layout, Error> {
         HEADER_BYTES
     };
     let Some(transparency) = entry.get(trailer..) else {
-        return Err(Error::BadHeader { field: "length" });
+        return Err(Error::BadHeader {
+            field: "length",
+            dimensions: None,
+        });
     };
     let layout = Layout {
         canvas_width: word(0),
@@ -271,11 +284,15 @@ pub fn parse_header(entry: &[u8]) -> Result<Layout, Error> {
         });
     }
     if layout.across == 0 || layout.down == 0 || layout.tile_width == 0 || layout.tile_height == 0 {
-        return Err(Error::BadHeader { field: "tile grid" });
+        return Err(Error::BadHeader {
+            field: "tile grid",
+            dimensions: Some(layout.image_size()),
+        });
     }
     if layout.transparency.len() != layout.tiles() {
         return Err(Error::BadHeader {
             field: "transparency count",
+            dimensions: Some(layout.image_size()),
         });
     }
     Ok(layout)
@@ -341,6 +358,7 @@ fn canvas_pixels(width: usize, height: usize) -> Result<usize, Error> {
         .filter(|&pixels| pixels <= MAX_CANVAS_PIXELS)
         .ok_or(Error::BadHeader {
             field: "canvas size",
+            dimensions: Some((width, height)),
         })
 }
 
@@ -351,7 +369,10 @@ fn tile_bytes(layout: &Layout) -> Result<usize, Error> {
         .tile_width
         .checked_mul(layout.tile_height)
         .and_then(|pixels| pixels.checked_add(HEP_HEADER + PALETTE_BYTES))
-        .ok_or(Error::BadHeader { field: "tile size" })
+        .ok_or(Error::BadHeader {
+            field: "tile size",
+            dimensions: Some((layout.tile_width, layout.tile_height)),
+        })
 }
 
 /// Decodes one tile stream of a layout, with the tile's size as the limit.
@@ -376,6 +397,7 @@ fn decode_atlas(header: &[u8], layout: &Layout, pixels: &[&[u8]]) -> Result<Imag
     if indices.len() != count {
         return Err(Error::BadHeader {
             field: "atlas pixel count",
+            dimensions: Some(layout.image_size()),
         });
     }
     let mut rgba = Vec::with_capacity(indices.len() * 4);
@@ -403,6 +425,7 @@ pub fn decode(entries: &[&[u8]]) -> Result<Image, Error> {
     if tiles.len() != layout.tiles() {
         return Err(Error::BadHeader {
             field: "entry count",
+            dimensions: Some(layout.image_size()),
         });
     }
     let (width, height) = layout.image_size();
@@ -411,7 +434,10 @@ pub fn decode(entries: &[&[u8]]) -> Result<Image, Error> {
         return decode_atlas(header, &layout, tiles);
     }
     if layout.across * layout.tile_width < width || layout.down * layout.tile_height < height {
-        return Err(Error::BadHeader { field: "tile grid" });
+        return Err(Error::BadHeader {
+            field: "tile grid",
+            dimensions: Some(layout.image_size()),
+        });
     }
     let mut rgba = vec![0u8; pixels * 4];
     for row in 0..layout.down {
@@ -487,7 +513,10 @@ pub fn encode(
     );
     canvas_pixels(padded_width, padded_height)?;
     if padded_width < width || padded_height < height {
-        return Err(Error::BadHeader { field: "tile grid" });
+        return Err(Error::BadHeader {
+            field: "tile grid",
+            dimensions: Some(layout.image_size()),
+        });
     }
     let canvas = pad(rgba, width, height, padded_width, padded_height);
     let mut entries: Vec<Vec<u8>> = Vec::with_capacity(1 + layout.tiles());
@@ -734,6 +763,7 @@ fn header_fields(layout: &Layout) -> Result<Vec<u8>, Error> {
     ] {
         let value = u16::try_from(value).map_err(|_| Error::BadHeader {
             field: "header field beyond 65535",
+            dimensions: Some(layout.image_size()),
         })?;
         header.extend_from_slice(&value.to_le_bytes());
     }
