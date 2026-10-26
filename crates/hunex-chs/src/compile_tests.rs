@@ -450,7 +450,8 @@ fn steam_if_jumps(list: &[NormInstruction], flag_value: i32) -> bool {
 
 #[test]
 fn if_compares_signed_left_to_right_and_jumps_on_false() {
-    let operators: [(&str, fn(i32, i32) -> bool); 6] = [
+    type ComparisonTestCase = (&'static str, fn(i32, i32) -> bool);
+    let operators: [ComparisonTestCase; 6] = [
         ("eq", |left, right| left == right),
         ("ne", |left, right| left != right),
         ("le", |left, right| left <= right),
