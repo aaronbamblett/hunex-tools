@@ -67,6 +67,28 @@ A file without any string pointer has no pool start, so its code must run exactl
 
 ### Source text and normalized form
 
+Steam comparisons use the following mapping, established by registration at
+S `0x14007a5e2–0x14007a635` (slots starting at `+0x180`) and handlers at
+S `0x14007d120–0x14007d2b0`:
+
+| Operator | Opcode | Handler condition |
+|---|---|---|
+| `eq` | `0x30` | `sete` (left == right) |
+| `ne` | `0x31` | `setne` (left != right) |
+| `le` | `0x32` | `setle` (left <= right) |
+| `ge` | `0x33` | `setge` (left >= right) |
+| `lt` | `0x34` | `setl` (left < right) |
+| `gt` | `0x35` | `setg` (left > right) |
+
+The compiler pushes the left flag value through `0xea`, then the right value
+(including expression evaluation), then emits the comparison. The handlers
+pop the right operand first and compare the remaining left operand against it;
+for example, S `0x14007d1c0` uses `cmp [left], r9d; setle`. Ordered comparisons
+are signed 32-bit comparisons. `_IF__` then pushes the target and emits `0x19`
+with immediate zero to jump when the predicate is false, matching Switch's
+textual comparison branch polarity. This does not resolve the source's
+16-bit versus Steam's 32-bit value differences; see [IF__](../engine/opcodes/IF__.md).
+
 Checked on sample files: the `source` parser reads all 249 Switch scripts into 493,227 statements (including 14 malformed `_KWRS` tokens), matching the reference parser statement for statement. The `normalize` helper drops every Debug instruction and resolves string and jump targets, which is the form used to compare compiler output against the sample files.
 
 The `compile` lowering covers the engine recipe table (prologue dispatch, labels, conditionals, jumps, messages, typed encoders, epilogue return) and compares against all 249 scenes with identical per-scene classes. The three counts are cumulative: 162 scenes match exactly, 216 including shape matches (source-numeric drift only), and 242 including reviewed authored edits. Jump targets normalize to their own operand variant so a target never compares equal to a literal number.

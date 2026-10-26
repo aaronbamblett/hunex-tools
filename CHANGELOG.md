@@ -2,6 +2,7 @@
 
 ## Unreleased
 
+- Fix ordered comparison opcodes (lt/le/gt/ge were mapped to the wrong Steam handlers)
 - `hunex chs compile`: compile Switch script text to a Steam `.chs` file. It holds a parser for `_NAME(arguments);` statements, the engine recipe table for 92 commands, and a lowering with labels, conditionals, jumps and messages. It emits no Debug records and interns strings in first-use order.
 - `hunex-chs` APIs: `source` parses Switch script text, `normalize` reduces a program to the Debug-free form used for comparison, `compile` lowers statements with the recipe table, and `compare` classifies a scene as exact, shape or authored.
 - Verified in game: a Mahoyo scene compiled from Switch text plays through in the Steam release of Witch on the Holy Night.
