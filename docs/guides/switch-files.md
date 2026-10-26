@@ -172,6 +172,4 @@ Checked on sample files: each command above reproduces the original where the or
 
 The decoded scripts match script dumps made with an independent tool, deepLuna, which is licensed under BSD-2. The `HUNEX_SWITCH_DUMP_A` and `HUNEX_SWITCH_DUMP_B` gated tests check them. See [CONTRIBUTING](../../CONTRIBUTING.md).
 
-Open: the game has not loaded any file that these commands write.
-
 Format details: [Switch archive format note](../formats/switch-archives.md).

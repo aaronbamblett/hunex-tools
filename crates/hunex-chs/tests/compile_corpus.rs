@@ -12,6 +12,9 @@
 //! | `HUNEX_COMPILE_SCENE_NUMBERS` | The `scene-numbers.json` fixture: `_JUMP` number to Steam name. | The compile test is skipped. |
 //! | `HUNEX_COMPILE_AUTHORED` | The reviewed `authored-diffs-v2.json` manifest. | The compile test is skipped. |
 //! | `HUNEX_COMPILE_EXPECTED_CLASSES` | The `expected-classes.json` fixture: expected class per scene. | The compile test is skipped. |
+//!
+//! The corpus fixtures are maintainer-provided and cannot be reproduced from this repository.
+//! The compile comparison skips when the required files are not supplied.
 
 use std::collections::BTreeMap;
 use std::path::PathBuf;
@@ -273,7 +276,7 @@ impl JsonReader<'_> {
     }
 
     fn string(&mut self) -> Result<String, String> {
-        self.pos += 1; // Skip the opening quote.
+        self.pos += 1;
         let mut out = String::new();
         loop {
             match self.chars.get(self.pos) {
@@ -332,7 +335,7 @@ impl JsonReader<'_> {
     }
 
     fn array(&mut self) -> Result<Vec<Value>, String> {
-        self.pos += 1; // Skip `[`.
+        self.pos += 1;
         let mut out = Vec::new();
         self.skip_space();
         if self.chars.get(self.pos) == Some(&']') {
@@ -356,7 +359,7 @@ impl JsonReader<'_> {
     }
 
     fn object(&mut self) -> Result<Vec<(String, Value)>, String> {
-        self.pos += 1; // Skip `{`.
+        self.pos += 1;
         let mut out = Vec::new();
         self.skip_space();
         if self.chars.get(self.pos) == Some(&'}') {
@@ -480,15 +483,6 @@ fn parse_norm_instruction(
         }
     }
     Ok(normalize::NormInstruction::new(opcode, operands))
-}
-
-fn class_rank(class: &compare::SceneClass) -> u8 {
-    match class {
-        compare::SceneClass::Structural => 0,
-        compare::SceneClass::Authored => 1,
-        compare::SceneClass::Shape => 2,
-        compare::SceneClass::Exact => 3,
-    }
 }
 
 fn class_of_label(label: &str) -> Result<compare::SceneClass, String> {
@@ -741,7 +735,7 @@ fn switch_scenes_compile_to_reference_classes() {
         };
         let expected_class = class_of_label(&expected_label).expect("class label");
         if result.class == expected_class {
-        } else if class_rank(&result.class) > class_rank(&expected_class) {
+        } else if result.class > expected_class {
             beats.push(format!(
                 "{scene}: Rust {} beats reference {}",
                 result.class.label(),

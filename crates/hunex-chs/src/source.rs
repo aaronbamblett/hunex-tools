@@ -171,7 +171,7 @@ impl Value {
     }
 }
 
-/// An arithmetic argument: unary minus, addition, subtraction and parentheses.
+/// An argument expression with unary minus, addition, subtraction, bitwise OR/AND and parentheses.
 ///
 /// Parsing caps nesting at [`MAX_EXPR_NESTING`] and the node count at
 /// [`MAX_EXPR_NODES`], so walking, lowering or dropping a parsed tree never
@@ -222,7 +222,7 @@ pub enum ParseError {
         /// Character index of the statement start.
         offset: usize,
     },
-    /// An expression with an operator outside `+` and `-` (`*`, `/`, `%`) or with
+    /// An expression with an operator outside `+`, `-`, `|` and `&` (`*`, `/`, `%`) or with
     /// any other shape the AST does not cover.
     UnsupportedExpression {
         /// Character index of the statement start.

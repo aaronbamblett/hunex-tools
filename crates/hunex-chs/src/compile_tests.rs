@@ -505,7 +505,7 @@ fn unproven_zero_emission_selections_warn_without_emitting() {
     );
     assert_eq!(
         warnings[0].reason(),
-        "zero-emission predicate not proven on the corpus"
+        "zero-emission rule not proven on the corpus"
     );
 
     let statements = source::parse("_WKST(F848,eq,63);").unwrap();
@@ -720,4 +720,17 @@ fn ssw2_scr0424_800ms_shapes_approximate_with_persistent_stsw() {
             vec![ins(0, vec![num(slot)]), ins(0x274, vec![])]
         );
     }
+}
+
+#[test]
+fn tiny_script_compiles_to_a_header_matching_real_files() {
+    let statements = source::parse("_END_();").unwrap();
+    let compiled = compile(&statements, &[]).unwrap();
+    let bytes = compiled.program().lower().unwrap().encode();
+    assert_eq!(&bytes[..27], b"HunexCompiledScriptVer1.00\0");
+    assert_eq!(u32::from_le_bytes(bytes[27..31].try_into().unwrap()), 21);
+    assert_eq!(u32::from_le_bytes(bytes[31..35].try_into().unwrap()), 0);
+    assert_eq!(&bytes[35..48], &[0u8; 13]);
+    let script = crate::Script::parse(&bytes).unwrap();
+    assert_eq!(script.encode(), bytes);
 }

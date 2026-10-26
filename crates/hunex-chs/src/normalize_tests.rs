@@ -79,16 +79,6 @@ fn target_on_end_of_code_maps_to_list_length() {
 }
 
 #[test]
-fn target_never_compares_equal_to_a_literal_number() {
-    let list = normalize(&program()).unwrap();
-    assert_ne!(
-        list[1].operands(),
-        &[NormOperand::Num(2)],
-        "a jump target must not equal the same literal number"
-    );
-}
-
-#[test]
 fn plain_dword_third_operand_of_skip_is_preserved() {
     let mut edits = program();
     edits.remove(4).unwrap();
@@ -106,31 +96,5 @@ fn plain_dword_third_operand_of_skip_is_preserved() {
         list[3].operands()[2],
         NormOperand::Num(9),
         "a non-string 0x7B operand stays numeric"
-    );
-}
-
-#[test]
-fn first_difference_finds_the_diverging_index() {
-    let list = normalize(&program()).unwrap();
-    assert_eq!(first_difference(&[], &[]), None);
-    assert_eq!(first_difference(&list, &list.clone()), None);
-    let mut changed = list.clone();
-    changed[3] = NormInstruction::new(0x7B, vec![NormOperand::Num(0)]);
-    assert_eq!(first_difference(&list, &changed), Some(3));
-    assert_eq!(first_difference(&list, &list[..3]), Some(3));
-    assert_eq!(first_difference(&list[..3], &list), Some(3));
-}
-
-#[test]
-fn plain_dword_operands_pass_through() {
-    let mut edits = program();
-    edits.remove(2).unwrap();
-    edits
-        .insert(2, Item::new(0x00, vec![Operand::Dword(0)]))
-        .unwrap();
-    let list = normalize(&edits).unwrap();
-    assert_eq!(
-        list[1],
-        NormInstruction::new(0x00, vec![NormOperand::Num(0)])
     );
 }

@@ -1,20 +1,6 @@
-//! Lower parsed Switch statements to a [`Program`] using the engine recipe table.
+//! Lower parsed Switch statements to a Debug-free Steam [`Program`] using the engine recipe table.
 //!
-//! [`compile`] reads [`Statement`]s and the caller-supplied scene number map and
-//! emits prologue dispatch blocks, labels, conditionals, jumps, messages, typed
-//! encoders and the epilogue return, tracking each numeric push made from a source
-//! argument so shape comparison can relax only those. It emits no Debug
-//! instructions, interns strings in first-use order, writes the Steam header
-//! layout (size 21, no includes, thirteen zero padding bytes), and fails with the
-//! offending statement offset on unknown commands, unmatched predicates, missing
-//! scene numbers, unknown comparison operators, unresolved labels and unproven shapes.
-//! Zero-emission recipes emit no instructions but still apply their state and label
-//! effects. Selecting one whose predicate is not
-//! proven on the corpus records a [`CompileWarning`] without changing emission.
-//!
-//! The scene number to scene name map is an input, derived per the spec's scene
-//! number rule (for example from a names list such as `nam.bin` entries): each
-//! `_JUMP` number must resolve through it, and a missing number is an error.
+//! The caller supplies the scene number to scene name map used by `_JUMP`.
 //!
 //! ```
 //! let statements = hunex_chs::source::parse("_END_();").unwrap();
@@ -52,13 +38,10 @@ pub enum SlotEncoder {
     TagPart(u8),
 }
 
-/// The reason every [`CompileWarning`] carries: the selected zero-emission
-/// predicate is not proven on the corpus.
-pub const ZERO_EMISSION_UNPROVEN: &str = "zero-emission predicate not proven on the corpus";
+/// The reason every [`CompileWarning`] carries: the selected zero-emission rule is unproven.
+pub const ZERO_EMISSION_UNPROVEN: &str = "zero-emission rule not proven on the corpus";
 
-/// One selected zero-emission predicate that is not proven on the corpus. The
-/// compiler emits nothing for it, exactly as for proven predicates, but keeps
-/// the selection visible here.
+/// A selected zero-emission recipe not proven on the corpus.
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct CompileWarning {
     offset: usize,
@@ -68,7 +51,7 @@ pub struct CompileWarning {
 }
 
 impl CompileWarning {
-    /// The source character offset of the statement that selected the predicate.
+    /// The source character offset of the statement that selected the rule.
     pub fn offset(&self) -> usize {
         self.offset
     }
@@ -128,8 +111,8 @@ impl Compiled {
         &self.selected
     }
 
-    /// One entry per selected zero-emission predicate that is not proven on the
-    /// corpus, in source order. Emitting nothing for them is unchanged.
+    /// One entry per selected zero-emission rule that is not proven on the
+    /// corpus, in source order.
     pub fn warnings(&self) -> &[CompileWarning] {
         &self.warnings
     }
@@ -177,7 +160,7 @@ pub struct CompileError {
 }
 
 impl CompileError {
-    /// What failed.
+    /// The lowering constraint that the statement violated.
     pub fn kind(&self) -> &CompileErrorKind {
         &self.kind
     }
@@ -1030,9 +1013,9 @@ impl<'a> Builder<'a> {
 ///
 /// `scene_names` maps `_JUMP` decimal spellings to Steam scene names; every used
 /// number must resolve through it. The call fails with the offending statement's
-/// offset on unknown commands, unmatched predicates, missing scene numbers,
-/// unknown comparison operators, unresolved labels, unproven shapes and anything
-/// else outside the recipe table.
+/// offset on unknown commands, argument shapes no recipe matches, missing scene
+/// numbers, unknown comparison operators, unresolved labels and encoder or program
+/// validation errors.
 pub fn compile(
     statements: &[Statement],
     scene_names: &[(&str, &str)],
@@ -1143,7 +1126,7 @@ pub fn compile(
             {
                 return Err(builder.error(index, CompileErrorKind::InvalidProgram));
             }
-            // The patched streamer extracts sample frames before restoring native loop mode.
+            // Patched 0x180 reads bit 31 as a frame marker, bits 2–30 as the start frame, and bit 0 as loop.
             let mode = if position == 0 {
                 1
             } else {

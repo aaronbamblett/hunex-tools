@@ -1,6 +1,3 @@
-// Engine recipe data. This table is the maintained source: edit it by hand and
-// keep the command tables sorted by name. Scene number mappings are compiler
-// input, not data.
 use super::{
     BodyPart, CmpOp, CommandTable, Encoder, Field, LitInstr, LitOp, Recipe, SetState, Special,
     StateKey, When,

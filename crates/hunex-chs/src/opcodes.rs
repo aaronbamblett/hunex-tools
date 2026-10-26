@@ -10,7 +10,7 @@ pub struct OpcodeInfo {
     pub mnemonic: Option<&'static str>,
 }
 
-/// The 160 registered ids (71 base opcodes and 89 commands), sorted by id.
+/// The 164 opcode ids (71 base opcodes and 93 commands), sorted by id.
 pub const OPCODES: &[OpcodeInfo] = &[
     OpcodeInfo {
         id: 0x000,

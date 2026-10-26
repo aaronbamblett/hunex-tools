@@ -4,13 +4,10 @@
 //! `<number> <scene name>` per line) or, for the Mahoyo Switch layout, a
 //! `nam.bin` file via `--names`: 32-byte records whose name is the first 30
 //! bytes up to NUL, resolved to scene numbers by record index (see
-//! [`parse_names`]). Exactly one of the two options is required. The compiled
-//! program is written with the crate's encoder, so the header, the Debug-free
-//! code and the first-use string pool match what [`hunex_chs::compile`]
-//! produces.
+//! [`parse_names`]). Exactly one of the two options is required.
 //!
 //! Errors and `--warnings all` lines name `line:column` positions (1-based).
-//! By default, selections of zero-emission predicates that are not proven on
+//! By default, selections of zero-emission rules that are not proven on
 //! the corpus print one summary line per command to stderr; compile errors
 //! exit non-zero.
 //!
@@ -330,18 +327,5 @@ mod tests {
             Some("warning: 2 statements use zero-emission rules not proven on the corpus: _WKST 2")
         );
         assert_eq!(warning_summary(&[]), None);
-    }
-
-    #[test]
-    fn tiny_script_compiles_to_a_header_matching_real_files() {
-        let statements = hunex_chs::source::parse("_END_();").unwrap();
-        let compiled = hunex_chs::compile::compile(&statements, &[]).unwrap();
-        let bytes = compiled.program().lower().unwrap().encode();
-        assert_eq!(&bytes[..27], b"HunexCompiledScriptVer1.00\0");
-        assert_eq!(u32::from_le_bytes(bytes[27..31].try_into().unwrap()), 21);
-        assert_eq!(u32::from_le_bytes(bytes[31..35].try_into().unwrap()), 0);
-        assert_eq!(&bytes[35..48], &[0u8; 13]);
-        let script = hunex_chs::Script::parse(&bytes).unwrap();
-        assert_eq!(script.encode(), bytes);
     }
 }
