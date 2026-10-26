@@ -11530,19 +11530,19 @@ pub static COMPARISON_OPS: &[CmpOp] = &[
     },
     CmpOp {
         name: "ge",
-        opcode: 53,
-    },
-    CmpOp {
-        name: "gt",
-        opcode: 52,
-    },
-    CmpOp {
-        name: "le",
         opcode: 51,
     },
     CmpOp {
-        name: "lt",
+        name: "gt",
+        opcode: 53,
+    },
+    CmpOp {
+        name: "le",
         opcode: 50,
+    },
+    CmpOp {
+        name: "lt",
+        opcode: 52,
     },
     CmpOp {
         name: "ne",

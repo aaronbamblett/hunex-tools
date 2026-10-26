@@ -357,6 +357,130 @@ fn platform_if_emits_the_comparison_as_a_call() {
     );
 }
 
+fn assert_if_opcode(operator: &str, opcode: u32) {
+    assert_eq!(crate::recipes::comparison_op(operator), Some(opcode));
+    assert_eq!(
+        statement_list(&format!("_IF__(F024,{operator},7,DONE);_ZZ(DONE);"), &[]),
+        vec![
+            ins(0, vec![num(24)]),
+            ins(0, vec![num(0)]),
+            ins(0xea, vec![]),
+            ins(0, vec![num(7)]),
+            ins(opcode, vec![]),
+            ins(1, vec![NormOperand::Target(17)]),
+            ins(0x19, vec![num(0)]),
+        ]
+    );
+}
+
+#[test]
+fn if_eq_calls_0x30() {
+    assert_if_opcode("eq", 0x30);
+}
+
+#[test]
+fn if_ne_calls_0x31() {
+    assert_if_opcode("ne", 0x31);
+}
+
+#[test]
+fn if_le_calls_0x32() {
+    assert_if_opcode("le", 0x32);
+}
+
+#[test]
+fn if_ge_calls_0x33() {
+    assert_if_opcode("ge", 0x33);
+}
+
+#[test]
+fn if_lt_calls_0x34() {
+    assert_if_opcode("lt", 0x34);
+}
+
+#[test]
+fn if_gt_calls_0x35() {
+    assert_if_opcode("gt", 0x35);
+}
+
+fn steam_if_jumps(list: &[NormInstruction], flag_value: i32) -> bool {
+    let mut stack = Vec::new();
+    for instruction in list {
+        match instruction.opcode() {
+            0 => match instruction.operands() {
+                [NormOperand::Num(value)] => stack.push(*value as i32),
+                other => panic!("unexpected push {other:?}"),
+            },
+            0xea => {
+                assert_eq!(stack.pop(), Some(0));
+                assert_eq!(stack.pop(), Some(24));
+                stack.push(flag_value);
+            }
+            0x20 | 0x21 | 0x25 | 0x26 | 0x30..=0x35 => {
+                // S 0x14007d120..0x14007d2b0 pop right, then compare left to right.
+                let right = stack.pop().unwrap();
+                let left = stack.pop().unwrap();
+                let value = match instruction.opcode() {
+                    0x20 => left.wrapping_add(right),
+                    0x21 => left.wrapping_sub(right),
+                    0x25 => left & right,
+                    0x26 => left | right,
+                    0x30 => i32::from(left == right),
+                    0x31 => i32::from(left != right),
+                    0x32 => i32::from(left <= right),
+                    0x33 => i32::from(left >= right),
+                    0x34 => i32::from(left < right),
+                    0x35 => i32::from(left > right),
+                    _ => unreachable!(),
+                };
+                stack.push(value);
+            }
+            1 => assert!(matches!(instruction.operands(), [NormOperand::Target(_)])),
+            0x19 => {
+                assert_eq!(instruction.operands(), &[num(0)]);
+                let predicate = stack.pop().unwrap();
+                assert!(stack.is_empty());
+                return predicate == 0;
+            }
+            other => panic!("unexpected opcode {other:#x}"),
+        }
+    }
+    panic!("missing conditional jump");
+}
+
+#[test]
+fn if_compares_signed_left_to_right_and_jumps_on_false() {
+    type ComparisonTestCase = (&'static str, fn(i32, i32) -> bool);
+    let operators: [ComparisonTestCase; 6] = [
+        ("eq", |left, right| left == right),
+        ("ne", |left, right| left != right),
+        ("le", |left, right| left <= right),
+        ("ge", |left, right| left >= right),
+        ("lt", |left, right| left < right),
+        ("gt", |left, right| left > right),
+    ];
+    for (operator, compare) in operators {
+        for (left, right) in [(-3, 7), (7, -3), (7, 7)] {
+            let list = statement_list(
+                &format!("_IF__(F024,{operator},{right},DONE);_ZZ(DONE);"),
+                &[],
+            );
+            assert_eq!(
+                steam_if_jumps(&list, left),
+                !compare(left, right),
+                "{left} {operator} {right}"
+            );
+        }
+        let list = statement_list(
+            &format!("_IF__(F024,{operator},((7|8)&7)+2,DONE);_ZZ(DONE);"),
+            &[],
+        );
+        for left in [-3, 9, 15] {
+            assert_eq!(steam_if_jumps(&list, left), !compare(left, 9));
+        }
+    }
+}
+
 #[test]
 fn zero_emission_recipes_leave_empty_spans_but_set_state() {
     let statements = source::parse("_WKST(F822,eq,1);_WNTY(0);").unwrap();

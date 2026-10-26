@@ -8,6 +8,8 @@ Source spelling: `_IF__(F026,ne,0,LV00000)`.
 
 ## Steam build
 
+- [code] S registration `0x14007a5e2–0x14007a635` stores handlers for `0x30..0x35` in slots starting at `+0x180`: eq `0x30`, ne `0x31`, le `0x32`, ge `0x33`, lt `0x34`, gt `0x35`. Handlers S `0x14007d120–0x14007d2b0` use `sete`, `setne`, `setle`, `setge`, `setl`, `setg`, respectively. The compiler pushes left through flag read `0xea`, then right; handlers pop right first and compare left against right (for example S `0x14007d1c0`: `cmp [left], r9d; setle`). Ordered comparisons are signed 32-bit comparisons.
+
 - [code] Compiler emits flag read `0xea`, right value, comparison `0x30..0x35`, target, then `0x19` with immediate 0 (H `compile::lower_special`; `recipes_data::COMMANDS`). Conditional jump S `0x14007cb00–0x14007cb5a` consumes target and predicate; immediate 0 selects predicate==0. It changes VM IP `+0x38` and returns 0 without a wait or direct audiovisual work. [code] Values are 32-bit and F/G/_D addressing is the Steam layout described in [WKST](WKST.md), with out-of-range reads returning zero (S `0x14007dc00–0x14007dcb3`). [data] Mahoyo has 150 flag reads and 1,071 conditional jumps in 250 raw scripts; these include entry dispatch and other predicates, not 1,071 recovered IF__ statements. `raw/1_0.chs:0x7c08–0x7c20` reads F024, compares to 1 and jumps on false before the return macro.
 
 ## Differences

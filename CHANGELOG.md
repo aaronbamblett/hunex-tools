@@ -1,5 +1,9 @@
 # Changelog
 
+## Unreleased
+
+- Fix ordered comparison opcodes (lt/le/gt/ge were mapped to the wrong Steam handlers).
+
 ## 0.2.0
 
 - `hunex chs compile`: compile Switch script text to a Steam `.chs` file. It holds a parser for `_NAME(arguments);` statements, the engine recipe table for 97 commands, and a lowering with labels, conditionals, jumps and messages. It emits no Debug records and interns strings in first-use order.
