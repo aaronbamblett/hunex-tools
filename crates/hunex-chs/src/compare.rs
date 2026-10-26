@@ -1,28 +1,9 @@
-//! Whole-scene comparison of compiled output against normalized Steam files.
+//! Whole-scene comparison against normalized Steam files: exact, shape, authored or structural.
 //!
-//! [`compare`] classifies one scene as [`SceneClass::Exact`], [`SceneClass::Shape`],
-//! [`SceneClass::Authored`] or [`SceneClass::Structural`]. Exact comparison is
-//! positional equality of every normalized instruction, including operand counts,
-//! strings, fixed integers, metadata counters, targets and the return. Shape
-//! comparison additionally lets the integer operand of an opcode-`0x00` instruction
-//! differ, but only at tracked source-numeric pushes: flag indices and banks,
-//! defaults, fixed macro constants, message modes and state, inline metadata
-//! operands, expression opcodes and every string and target stay exact. There is no
-//! jump-target, string or opcode wildcard.
-//!
-//! The authored level replays individually reviewed manifest entries before the
-//! shape check: each entry's exact source and Steam fragments, source and Steam
-//! indices, source owner character offset, Steam byte offset, reviewed status and
-//! nonempty evidence are all verified, entries run in ascending source and Steam
-//! order without overlap, untouched `PushOffset` targets relocate through surviving
-//! boundaries, and replacement instructions are taken exactly as recorded. A stale
-//! payload or offset fails the scene; it never silently passes.
-//!
-//! The JSON parsing of the authored manifest lives with the caller (this library is
-//! `no_std` with no dependencies); the manifest entries arrive here as parsed data.
-//!
-//! Statement recovery metrics are deliberately outside this module: whole-scene
-//! acceptance uses no recovery.
+//! Exact requires identical instructions and operands. Shape permits source-numeric
+//! drift only at tracked opcode-`0x00` pushes; fixed values, strings, targets and
+//! opcodes stay exact. Authored applies reviewed manifest edits before the shape
+//! check. Structural means the scene still differs after those edits.
 //!
 //! ```
 //! use hunex_chs::compare::{compare, SceneClass, SceneInput};
@@ -131,7 +112,7 @@ pub enum AuthoredFailure {
 /// The result of one scene comparison.
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct SceneComparison {
-    /// The scene class.
+    /// The strongest comparison level the scene satisfies.
     pub class: SceneClass,
     /// The first exact divergence index, or the shorter length on truncation.
     pub exact_divergence: Option<usize>,

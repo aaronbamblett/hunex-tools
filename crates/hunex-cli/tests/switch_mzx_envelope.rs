@@ -10,6 +10,7 @@ use hunex_mzx::{switch, Step, WINDOW_WORDS};
 const WINDOW: usize = WINDOW_WORDS;
 
 #[test]
+#[ignore = "measurement tool; requires HUNEX_SWITCH_ROMFS_A and --nocapture"]
 fn switch_script_streams_envelope() {
     let Some(dir) = std::env::var_os("HUNEX_SWITCH_ROMFS_A").map(PathBuf::from) else {
         eprintln!("HUNEX_SWITCH_ROMFS_A is not set; skipping the Switch MZX measurement");

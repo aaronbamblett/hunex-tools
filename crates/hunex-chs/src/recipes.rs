@@ -14,8 +14,6 @@
 //! assert_eq!(recipes[0].id, "_END_:0");
 //! ```
 
-use alloc::vec::Vec;
-
 use crate::source::ValueKind;
 
 #[path = "recipes_data.rs"]
@@ -82,9 +80,9 @@ pub enum LitOp {
 /// One literal instruction in the table: an opcode and its fixed operands.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub struct LitInstr {
-    /// The opcode.
+    /// The opcode emitted without reading a source argument.
     pub opcode: u32,
-    /// The fixed operands.
+    /// Inline operands emitted in file order without source substitution.
     pub operands: &'static [LitOp],
 }
 
@@ -191,7 +189,7 @@ pub struct Recipe {
     pub target_field: usize,
     /// The fixed entry count of a [`Special::GotoTable`]; 0 otherwise.
     pub target_slots: usize,
-    /// True when this zero-emission predicate is not proven on the corpus: the
+    /// True when this zero-emission rule is not proven on the corpus: the
     /// compiler still emits nothing for it but records a warning.
     pub zero_unproven: bool,
 }
@@ -211,9 +209,4 @@ pub fn comparison_op(name: &str) -> Option<u32> {
         .iter()
         .find(|op| op.name == name)
         .map(|op| op.opcode)
-}
-
-/// Every canonical command name in the table, in sorted order.
-pub fn command_names() -> Vec<&'static str> {
-    COMMANDS.iter().map(|table| table.name).collect()
 }
