@@ -555,3 +555,45 @@ fn voice_pair_stages_starts_then_waits() {
 fn rtm2_preserves_music_without_returning() {
     assert_eq!(statement_list("_RTM2();", &[]), vec![ins(0x261, vec![])]);
 }
+
+#[test]
+fn sepl_category_shapes_keep_playback_pushes_but_drop_category() {
+    for (suffix, delay, fade, volume) in [
+        (",,`001:200,,`017:30,,`068:500,,`070:2", 500, 200, 30),
+        (",,`001:200,,`017:30,,`070:3", 0, 200, 30),
+        (",,`017:30,,`068:500,,`070:10", 500, 0, 30),
+        (",,`017:30,,`070:16", 0, 0, 30),
+        (",,`070:2", 0, 0, 100),
+    ] {
+        assert_eq!(
+            statement_list(&format!("_SEPL(19,1,FATE_SE142{suffix});"), &[]),
+            vec![
+                ins(0, vec![num(delay)]),
+                ins(0, vec![num(fade)]),
+                ins(0, vec![num(64)]),
+                ins(0, vec![num(volume)]),
+                ins(3, vec![text("FATE_SE142")]),
+                ins(0, vec![num(1)]),
+                ins(0, vec![num(19)]),
+                ins(0x190, vec![]),
+            ]
+        );
+    }
+}
+
+#[test]
+fn ssw2_scr0510_zero_shapes_emit_no_instructions() {
+    for source in ["_SSW2(33,1,6,500,600,0.5,-1,0);", "_SSW2(9,0,0,0,0,0,0,0);"] {
+        assert_eq!(statement_list(source, &[]), vec![]);
+    }
+}
+
+#[test]
+fn ssw2_scr0424_800ms_shapes_approximate_with_persistent_stsw() {
+    for slot in [6, 7] {
+        assert_eq!(
+            statement_list(&format!("_SSW2({slot},3,7,1000,5000,1,800,0);"), &[]),
+            vec![ins(0, vec![num(slot)]), ins(0x274, vec![])]
+        );
+    }
+}

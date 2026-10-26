@@ -4677,6 +4677,286 @@ static _SEPL_RECIPES: &[Recipe] = &[
         target_slots: 0,
         zero_unproven: false,
     },
+    // APPROXIMATE: drops tag 070 sound category; Steam 0x190 has no category operand.
+    Recipe {
+        id: "_SEPL:070-APPROXIMATE-fade-volume-delay",
+        when: When {
+            arity: Some(11),
+            arity_range: None,
+            equals: &[(3, ""), (5, ""), (7, ""), (9, "")],
+            kinds: &[
+                (0, ValueKind::Int),
+                (1, ValueKind::Int),
+                (2, ValueKind::Symbol),
+            ],
+            one_of: &[],
+            tag_codes: &[(4, "001"), (6, "017"), (8, "068"), (10, "070")],
+            state: &[],
+        },
+        fields: &[],
+        body: &[
+            BodyPart::Arg {
+                arg: 8,
+                encoder: Encoder::TagPart(0),
+            },
+            BodyPart::Arg {
+                arg: 4,
+                encoder: Encoder::TagPart(0),
+            },
+            BodyPart::Lit(&[LitInstr {
+                opcode: 0,
+                operands: &[LitOp::Num(64)],
+            }]),
+            BodyPart::Arg {
+                arg: 6,
+                encoder: Encoder::TagPart(0),
+            },
+            BodyPart::Arg {
+                arg: 2,
+                encoder: Encoder::Value,
+            },
+            BodyPart::Arg {
+                arg: 1,
+                encoder: Encoder::Value,
+            },
+            BodyPart::Arg {
+                arg: 0,
+                encoder: Encoder::Value,
+            },
+        ],
+        calls: &[400],
+        special: None,
+        set_state: &[],
+        platform_value: None,
+        platform_call: None,
+        target_field: 1,
+        target_slots: 0,
+        zero_unproven: false,
+    },
+    // APPROXIMATE: drops tag 070 sound category; Steam 0x190 has no category operand.
+    Recipe {
+        id: "_SEPL:070-APPROXIMATE-fade-volume",
+        when: When {
+            arity: Some(9),
+            arity_range: None,
+            equals: &[(3, ""), (5, ""), (7, "")],
+            kinds: &[
+                (0, ValueKind::Int),
+                (1, ValueKind::Int),
+                (2, ValueKind::Symbol),
+            ],
+            one_of: &[],
+            tag_codes: &[(4, "001"), (6, "017"), (8, "070")],
+            state: &[],
+        },
+        fields: &[],
+        body: &[
+            BodyPart::Lit(&[LitInstr {
+                opcode: 0,
+                operands: &[LitOp::Num(0)],
+            }]),
+            BodyPart::Arg {
+                arg: 4,
+                encoder: Encoder::TagPart(0),
+            },
+            BodyPart::Lit(&[LitInstr {
+                opcode: 0,
+                operands: &[LitOp::Num(64)],
+            }]),
+            BodyPart::Arg {
+                arg: 6,
+                encoder: Encoder::TagPart(0),
+            },
+            BodyPart::Arg {
+                arg: 2,
+                encoder: Encoder::Value,
+            },
+            BodyPart::Arg {
+                arg: 1,
+                encoder: Encoder::Value,
+            },
+            BodyPart::Arg {
+                arg: 0,
+                encoder: Encoder::Value,
+            },
+        ],
+        calls: &[400],
+        special: None,
+        set_state: &[],
+        platform_value: None,
+        platform_call: None,
+        target_field: 1,
+        target_slots: 0,
+        zero_unproven: false,
+    },
+    // APPROXIMATE: drops tag 070 sound category; Steam 0x190 has no category operand.
+    Recipe {
+        id: "_SEPL:070-APPROXIMATE-volume-delay",
+        when: When {
+            arity: Some(9),
+            arity_range: None,
+            equals: &[(3, ""), (5, ""), (7, "")],
+            kinds: &[
+                (0, ValueKind::Int),
+                (1, ValueKind::Int),
+                (2, ValueKind::Symbol),
+            ],
+            one_of: &[],
+            tag_codes: &[(4, "017"), (6, "068"), (8, "070")],
+            state: &[],
+        },
+        fields: &[],
+        body: &[
+            BodyPart::Arg {
+                arg: 6,
+                encoder: Encoder::TagPart(0),
+            },
+            BodyPart::Lit(&[LitInstr {
+                opcode: 0,
+                operands: &[LitOp::Num(0)],
+            }]),
+            BodyPart::Lit(&[LitInstr {
+                opcode: 0,
+                operands: &[LitOp::Num(64)],
+            }]),
+            BodyPart::Arg {
+                arg: 4,
+                encoder: Encoder::TagPart(0),
+            },
+            BodyPart::Arg {
+                arg: 2,
+                encoder: Encoder::Value,
+            },
+            BodyPart::Arg {
+                arg: 1,
+                encoder: Encoder::Value,
+            },
+            BodyPart::Arg {
+                arg: 0,
+                encoder: Encoder::Value,
+            },
+        ],
+        calls: &[400],
+        special: None,
+        set_state: &[],
+        platform_value: None,
+        platform_call: None,
+        target_field: 1,
+        target_slots: 0,
+        zero_unproven: false,
+    },
+    // APPROXIMATE: drops tag 070 sound category; Steam 0x190 has no category operand.
+    Recipe {
+        id: "_SEPL:070-APPROXIMATE-volume",
+        when: When {
+            arity: Some(7),
+            arity_range: None,
+            equals: &[(3, ""), (5, "")],
+            kinds: &[
+                (0, ValueKind::Int),
+                (1, ValueKind::Int),
+                (2, ValueKind::Symbol),
+            ],
+            one_of: &[],
+            tag_codes: &[(4, "017"), (6, "070")],
+            state: &[],
+        },
+        fields: &[],
+        body: &[
+            BodyPart::Lit(&[LitInstr {
+                opcode: 0,
+                operands: &[LitOp::Num(0)],
+            }]),
+            BodyPart::Lit(&[LitInstr {
+                opcode: 0,
+                operands: &[LitOp::Num(0)],
+            }]),
+            BodyPart::Lit(&[LitInstr {
+                opcode: 0,
+                operands: &[LitOp::Num(64)],
+            }]),
+            BodyPart::Arg {
+                arg: 4,
+                encoder: Encoder::TagPart(0),
+            },
+            BodyPart::Arg {
+                arg: 2,
+                encoder: Encoder::Value,
+            },
+            BodyPart::Arg {
+                arg: 1,
+                encoder: Encoder::Value,
+            },
+            BodyPart::Arg {
+                arg: 0,
+                encoder: Encoder::Value,
+            },
+        ],
+        calls: &[400],
+        special: None,
+        set_state: &[],
+        platform_value: None,
+        platform_call: None,
+        target_field: 1,
+        target_slots: 0,
+        zero_unproven: false,
+    },
+    // APPROXIMATE: drops tag 070 sound category; Steam 0x190 has no category operand.
+    Recipe {
+        id: "_SEPL:070-APPROXIMATE-defaults",
+        when: When {
+            arity: Some(5),
+            arity_range: None,
+            equals: &[(3, "")],
+            kinds: &[
+                (0, ValueKind::Int),
+                (1, ValueKind::Int),
+                (2, ValueKind::Symbol),
+            ],
+            one_of: &[],
+            tag_codes: &[(4, "070")],
+            state: &[],
+        },
+        fields: &[],
+        body: &[
+            BodyPart::Lit(&[LitInstr {
+                opcode: 0,
+                operands: &[LitOp::Num(0)],
+            }]),
+            BodyPart::Lit(&[LitInstr {
+                opcode: 0,
+                operands: &[LitOp::Num(0)],
+            }]),
+            BodyPart::Lit(&[LitInstr {
+                opcode: 0,
+                operands: &[LitOp::Num(64)],
+            }]),
+            BodyPart::Lit(&[LitInstr {
+                opcode: 0,
+                operands: &[LitOp::Num(100)],
+            }]),
+            BodyPart::Arg {
+                arg: 2,
+                encoder: Encoder::Value,
+            },
+            BodyPart::Arg {
+                arg: 1,
+                encoder: Encoder::Value,
+            },
+            BodyPart::Arg {
+                arg: 0,
+                encoder: Encoder::Value,
+            },
+        ],
+        calls: &[400],
+        special: None,
+        set_state: &[],
+        platform_value: None,
+        platform_call: None,
+        target_field: 1,
+        target_slots: 0,
+        zero_unproven: false,
+    },
 ];
 
 static _SESP_RECIPES: &[Recipe] = &[
@@ -8511,6 +8791,138 @@ static _STRT_RECIPES: &[Recipe] = &[Recipe {
     target_slots: 0,
     zero_unproven: false,
 }];
+static _SSW2_RECIPES: &[Recipe] = &[
+    Recipe {
+        id: "_SSW2:scr0510-798-exact-zero-multiplier-no-prior-bank3",
+        when: When {
+            arity: Some(8),
+            arity_range: None,
+            equals: &[
+                (0, "33"),
+                (1, "1"),
+                (2, "6"),
+                (3, "500"),
+                (4, "600"),
+                (5, "0.5"),
+                (6, "-1"),
+                (7, "0"),
+            ],
+            kinds: &[],
+            one_of: &[],
+            tag_codes: &[],
+            state: &[],
+        },
+        fields: &[],
+        body: &[],
+        calls: &[],
+        special: None,
+        set_state: &[],
+        platform_value: None,
+        platform_call: None,
+        target_field: 1,
+        target_slots: 0,
+        zero_unproven: false,
+    },
+    Recipe {
+        id: "_SSW2:scr0510-914-exact-zero-amplitude-lifetime-no-prior-bank3",
+        when: When {
+            arity: Some(8),
+            arity_range: None,
+            equals: &[
+                (0, "9"),
+                (1, "0"),
+                (2, "0"),
+                (3, "0"),
+                (4, "0"),
+                (5, "0"),
+                (6, "0"),
+                (7, "0"),
+            ],
+            kinds: &[],
+            one_of: &[],
+            tag_codes: &[],
+            state: &[],
+        },
+        fields: &[],
+        body: &[],
+        calls: &[],
+        special: None,
+        set_state: &[],
+        platform_value: None,
+        platform_call: None,
+        target_field: 1,
+        target_slots: 0,
+        zero_unproven: false,
+    },
+    Recipe {
+        id: "_SSW2:scr0424-APPROXIMATE-drops-800ms-expiry-slot6",
+        when: When {
+            arity: Some(8),
+            arity_range: None,
+            equals: &[
+                (0, "6"),
+                (1, "3"),
+                (2, "7"),
+                (3, "1000"),
+                (4, "5000"),
+                (5, "1"),
+                (6, "800"),
+                (7, "0"),
+            ],
+            kinds: &[],
+            one_of: &[],
+            tag_codes: &[],
+            state: &[],
+        },
+        fields: &[],
+        body: &[BodyPart::Arg {
+            arg: 0,
+            encoder: Encoder::Value,
+        }],
+        calls: &[628],
+        special: None,
+        set_state: &[],
+        platform_value: None,
+        platform_call: None,
+        target_field: 1,
+        target_slots: 0,
+        zero_unproven: false,
+    },
+    Recipe {
+        id: "_SSW2:scr0424-APPROXIMATE-drops-800ms-expiry-slot7",
+        when: When {
+            arity: Some(8),
+            arity_range: None,
+            equals: &[
+                (0, "7"),
+                (1, "3"),
+                (2, "7"),
+                (3, "1000"),
+                (4, "5000"),
+                (5, "1"),
+                (6, "800"),
+                (7, "0"),
+            ],
+            kinds: &[],
+            one_of: &[],
+            tag_codes: &[],
+            state: &[],
+        },
+        fields: &[],
+        body: &[BodyPart::Arg {
+            arg: 0,
+            encoder: Encoder::Value,
+        }],
+        calls: &[628],
+        special: None,
+        set_state: &[],
+        platform_value: None,
+        platform_call: None,
+        target_field: 1,
+        target_slots: 0,
+        zero_unproven: false,
+    },
+];
 static _STSW_RECIPES: &[Recipe] = &[Recipe {
     id: "_STSW:source",
     when: When {
@@ -10958,6 +11370,10 @@ pub static COMMANDS: &[CommandTable] = &[
     CommandTable {
         name: "_STCC",
         recipes: _STCC_RECIPES,
+    },
+    CommandTable {
+        name: "_SSW2",
+        recipes: _SSW2_RECIPES,
     },
     CommandTable {
         name: "_STCF",
