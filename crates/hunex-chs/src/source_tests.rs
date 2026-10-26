@@ -304,3 +304,12 @@ fn expressions_at_the_limits_still_parse() {
     chain.push_str(");");
     assert_eq!(parse(&chain).unwrap().len(), 1);
 }
+
+#[test]
+fn hex_lookalikes_remain_symbols() {
+    let statements = parse("_A(C0x1,C0xAB);").unwrap();
+    assert!(statements[0]
+        .args()
+        .iter()
+        .all(|arg| matches!(arg, Value::Symbol { .. })));
+}

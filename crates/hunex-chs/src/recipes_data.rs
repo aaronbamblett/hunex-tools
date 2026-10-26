@@ -674,28 +674,55 @@ static _FCLN_RECIPES: &[Recipe] = &[Recipe {
     target_slots: 0,
     zero_unproven: false,
 }];
-static _FCSP_RECIPES: &[Recipe] = &[Recipe {
-    id: "_FCSP:source",
-    when: When {
-        arity: Some(0),
-        arity_range: None,
-        equals: &[],
-        kinds: &[],
-        one_of: &[],
-        tag_codes: &[],
-        state: &[],
+static _FCSP_RECIPES: &[Recipe] = &[
+    Recipe {
+        id: "_FCSP:source",
+        when: When {
+            arity: Some(0),
+            arity_range: None,
+            equals: &[],
+            kinds: &[],
+            one_of: &[],
+            tag_codes: &[],
+            state: &[],
+        },
+        fields: &[],
+        body: &[],
+        calls: &[929],
+        special: None,
+        set_state: &[],
+        platform_value: None,
+        platform_call: None,
+        target_field: 1,
+        target_slots: 0,
+        zero_unproven: false,
     },
-    fields: &[],
-    body: &[],
-    calls: &[929],
-    special: None,
-    set_state: &[],
-    platform_value: None,
-    platform_call: None,
-    target_field: 1,
-    target_slots: 0,
-    zero_unproven: false,
-}];
+    Recipe {
+        id: "_FCSP:duration",
+        when: When {
+            arity: Some(1),
+            arity_range: None,
+            equals: &[],
+            kinds: &[(0, ValueKind::Int)],
+            one_of: &[],
+            tag_codes: &[],
+            state: &[],
+        },
+        fields: &[],
+        body: &[BodyPart::Arg {
+            arg: 0,
+            encoder: Encoder::Value,
+        }],
+        calls: &[606],
+        special: None,
+        set_state: &[],
+        platform_value: None,
+        platform_call: None,
+        target_field: 1,
+        target_slots: 0,
+        zero_unproven: false,
+    },
+];
 static _FLNT_RECIPES: &[Recipe] = &[Recipe {
     id: "_FLNT:source",
     when: When {
@@ -1810,6 +1837,28 @@ static _RDST_RECIPES: &[Recipe] = &[Recipe {
     target_slots: 0,
     zero_unproven: false,
 }];
+static _RTM2_RECIPES: &[Recipe] = &[Recipe {
+    id: "_RTM2:0",
+    when: When {
+        arity: Some(0),
+        arity_range: None,
+        equals: &[],
+        kinds: &[],
+        one_of: &[],
+        tag_codes: &[],
+        state: &[],
+    },
+    fields: &[],
+    body: &[],
+    calls: &[609],
+    special: None,
+    set_state: &[],
+    platform_value: None,
+    platform_call: None,
+    target_field: 1,
+    target_slots: 0,
+    zero_unproven: false,
+}];
 static _RTM__RECIPES: &[Recipe] = &[Recipe {
     id: "_RTM_:0",
     when: When {
@@ -1855,6 +1904,37 @@ static _SACL_RECIPES: &[Recipe] = &[Recipe {
         },
     ],
     calls: &[602],
+    special: None,
+    set_state: &[],
+    platform_value: None,
+    platform_call: None,
+    target_field: 1,
+    target_slots: 0,
+    zero_unproven: false,
+}];
+static _SBAS_RECIPES: &[Recipe] = &[Recipe {
+    id: "_SBAS:0",
+    when: When {
+        arity: Some(2),
+        arity_range: None,
+        equals: &[],
+        kinds: &[(0, ValueKind::Int), (1, ValueKind::Int)],
+        one_of: &[],
+        tag_codes: &[],
+        state: &[],
+    },
+    fields: &[],
+    body: &[
+        BodyPart::Arg {
+            arg: 1,
+            encoder: Encoder::Value,
+        },
+        BodyPart::Arg {
+            arg: 0,
+            encoder: Encoder::Value,
+        },
+    ],
+    calls: &[604],
     special: None,
     set_state: &[],
     platform_value: None,
@@ -4597,6 +4677,286 @@ static _SEPL_RECIPES: &[Recipe] = &[
         target_slots: 0,
         zero_unproven: false,
     },
+    // APPROXIMATE: drops tag 070 sound category; Steam 0x190 has no category operand.
+    Recipe {
+        id: "_SEPL:070-APPROXIMATE-fade-volume-delay",
+        when: When {
+            arity: Some(11),
+            arity_range: None,
+            equals: &[(3, ""), (5, ""), (7, ""), (9, "")],
+            kinds: &[
+                (0, ValueKind::Int),
+                (1, ValueKind::Int),
+                (2, ValueKind::Symbol),
+            ],
+            one_of: &[],
+            tag_codes: &[(4, "001"), (6, "017"), (8, "068"), (10, "070")],
+            state: &[],
+        },
+        fields: &[],
+        body: &[
+            BodyPart::Arg {
+                arg: 8,
+                encoder: Encoder::TagPart(0),
+            },
+            BodyPart::Arg {
+                arg: 4,
+                encoder: Encoder::TagPart(0),
+            },
+            BodyPart::Lit(&[LitInstr {
+                opcode: 0,
+                operands: &[LitOp::Num(64)],
+            }]),
+            BodyPart::Arg {
+                arg: 6,
+                encoder: Encoder::TagPart(0),
+            },
+            BodyPart::Arg {
+                arg: 2,
+                encoder: Encoder::Value,
+            },
+            BodyPart::Arg {
+                arg: 1,
+                encoder: Encoder::Value,
+            },
+            BodyPart::Arg {
+                arg: 0,
+                encoder: Encoder::Value,
+            },
+        ],
+        calls: &[400],
+        special: None,
+        set_state: &[],
+        platform_value: None,
+        platform_call: None,
+        target_field: 1,
+        target_slots: 0,
+        zero_unproven: false,
+    },
+    // APPROXIMATE: drops tag 070 sound category; Steam 0x190 has no category operand.
+    Recipe {
+        id: "_SEPL:070-APPROXIMATE-fade-volume",
+        when: When {
+            arity: Some(9),
+            arity_range: None,
+            equals: &[(3, ""), (5, ""), (7, "")],
+            kinds: &[
+                (0, ValueKind::Int),
+                (1, ValueKind::Int),
+                (2, ValueKind::Symbol),
+            ],
+            one_of: &[],
+            tag_codes: &[(4, "001"), (6, "017"), (8, "070")],
+            state: &[],
+        },
+        fields: &[],
+        body: &[
+            BodyPart::Lit(&[LitInstr {
+                opcode: 0,
+                operands: &[LitOp::Num(0)],
+            }]),
+            BodyPart::Arg {
+                arg: 4,
+                encoder: Encoder::TagPart(0),
+            },
+            BodyPart::Lit(&[LitInstr {
+                opcode: 0,
+                operands: &[LitOp::Num(64)],
+            }]),
+            BodyPart::Arg {
+                arg: 6,
+                encoder: Encoder::TagPart(0),
+            },
+            BodyPart::Arg {
+                arg: 2,
+                encoder: Encoder::Value,
+            },
+            BodyPart::Arg {
+                arg: 1,
+                encoder: Encoder::Value,
+            },
+            BodyPart::Arg {
+                arg: 0,
+                encoder: Encoder::Value,
+            },
+        ],
+        calls: &[400],
+        special: None,
+        set_state: &[],
+        platform_value: None,
+        platform_call: None,
+        target_field: 1,
+        target_slots: 0,
+        zero_unproven: false,
+    },
+    // APPROXIMATE: drops tag 070 sound category; Steam 0x190 has no category operand.
+    Recipe {
+        id: "_SEPL:070-APPROXIMATE-volume-delay",
+        when: When {
+            arity: Some(9),
+            arity_range: None,
+            equals: &[(3, ""), (5, ""), (7, "")],
+            kinds: &[
+                (0, ValueKind::Int),
+                (1, ValueKind::Int),
+                (2, ValueKind::Symbol),
+            ],
+            one_of: &[],
+            tag_codes: &[(4, "017"), (6, "068"), (8, "070")],
+            state: &[],
+        },
+        fields: &[],
+        body: &[
+            BodyPart::Arg {
+                arg: 6,
+                encoder: Encoder::TagPart(0),
+            },
+            BodyPart::Lit(&[LitInstr {
+                opcode: 0,
+                operands: &[LitOp::Num(0)],
+            }]),
+            BodyPart::Lit(&[LitInstr {
+                opcode: 0,
+                operands: &[LitOp::Num(64)],
+            }]),
+            BodyPart::Arg {
+                arg: 4,
+                encoder: Encoder::TagPart(0),
+            },
+            BodyPart::Arg {
+                arg: 2,
+                encoder: Encoder::Value,
+            },
+            BodyPart::Arg {
+                arg: 1,
+                encoder: Encoder::Value,
+            },
+            BodyPart::Arg {
+                arg: 0,
+                encoder: Encoder::Value,
+            },
+        ],
+        calls: &[400],
+        special: None,
+        set_state: &[],
+        platform_value: None,
+        platform_call: None,
+        target_field: 1,
+        target_slots: 0,
+        zero_unproven: false,
+    },
+    // APPROXIMATE: drops tag 070 sound category; Steam 0x190 has no category operand.
+    Recipe {
+        id: "_SEPL:070-APPROXIMATE-volume",
+        when: When {
+            arity: Some(7),
+            arity_range: None,
+            equals: &[(3, ""), (5, "")],
+            kinds: &[
+                (0, ValueKind::Int),
+                (1, ValueKind::Int),
+                (2, ValueKind::Symbol),
+            ],
+            one_of: &[],
+            tag_codes: &[(4, "017"), (6, "070")],
+            state: &[],
+        },
+        fields: &[],
+        body: &[
+            BodyPart::Lit(&[LitInstr {
+                opcode: 0,
+                operands: &[LitOp::Num(0)],
+            }]),
+            BodyPart::Lit(&[LitInstr {
+                opcode: 0,
+                operands: &[LitOp::Num(0)],
+            }]),
+            BodyPart::Lit(&[LitInstr {
+                opcode: 0,
+                operands: &[LitOp::Num(64)],
+            }]),
+            BodyPart::Arg {
+                arg: 4,
+                encoder: Encoder::TagPart(0),
+            },
+            BodyPart::Arg {
+                arg: 2,
+                encoder: Encoder::Value,
+            },
+            BodyPart::Arg {
+                arg: 1,
+                encoder: Encoder::Value,
+            },
+            BodyPart::Arg {
+                arg: 0,
+                encoder: Encoder::Value,
+            },
+        ],
+        calls: &[400],
+        special: None,
+        set_state: &[],
+        platform_value: None,
+        platform_call: None,
+        target_field: 1,
+        target_slots: 0,
+        zero_unproven: false,
+    },
+    // APPROXIMATE: drops tag 070 sound category; Steam 0x190 has no category operand.
+    Recipe {
+        id: "_SEPL:070-APPROXIMATE-defaults",
+        when: When {
+            arity: Some(5),
+            arity_range: None,
+            equals: &[(3, "")],
+            kinds: &[
+                (0, ValueKind::Int),
+                (1, ValueKind::Int),
+                (2, ValueKind::Symbol),
+            ],
+            one_of: &[],
+            tag_codes: &[(4, "070")],
+            state: &[],
+        },
+        fields: &[],
+        body: &[
+            BodyPart::Lit(&[LitInstr {
+                opcode: 0,
+                operands: &[LitOp::Num(0)],
+            }]),
+            BodyPart::Lit(&[LitInstr {
+                opcode: 0,
+                operands: &[LitOp::Num(0)],
+            }]),
+            BodyPart::Lit(&[LitInstr {
+                opcode: 0,
+                operands: &[LitOp::Num(64)],
+            }]),
+            BodyPart::Lit(&[LitInstr {
+                opcode: 0,
+                operands: &[LitOp::Num(100)],
+            }]),
+            BodyPart::Arg {
+                arg: 2,
+                encoder: Encoder::Value,
+            },
+            BodyPart::Arg {
+                arg: 1,
+                encoder: Encoder::Value,
+            },
+            BodyPart::Arg {
+                arg: 0,
+                encoder: Encoder::Value,
+            },
+        ],
+        calls: &[400],
+        special: None,
+        set_state: &[],
+        platform_value: None,
+        platform_call: None,
+        target_field: 1,
+        target_slots: 0,
+        zero_unproven: false,
+    },
 ];
 
 static _SESP_RECIPES: &[Recipe] = &[
@@ -7113,31 +7473,58 @@ static _STCF_RECIPES: &[Recipe] = &[Recipe {
     target_slots: 0,
     zero_unproven: false,
 }];
-static _STCG_RECIPES: &[Recipe] = &[Recipe {
-    id: "_STCG:0",
-    when: When {
-        arity: Some(1),
-        arity_range: None,
-        equals: &[],
-        kinds: &[(0, ValueKind::Image)],
-        one_of: &[],
-        tag_codes: &[],
-        state: &[],
+static _STCG_RECIPES: &[Recipe] = &[
+    Recipe {
+        id: "_STCG:0",
+        when: When {
+            arity: Some(1),
+            arity_range: None,
+            equals: &[],
+            kinds: &[(0, ValueKind::Image)],
+            one_of: &[],
+            tag_codes: &[],
+            state: &[],
+        },
+        fields: &[],
+        body: &[BodyPart::Arg {
+            arg: 0,
+            encoder: Encoder::Value,
+        }],
+        calls: &[552],
+        special: None,
+        set_state: &[],
+        platform_value: None,
+        platform_call: None,
+        target_field: 1,
+        target_slots: 0,
+        zero_unproven: false,
     },
-    fields: &[],
-    body: &[BodyPart::Arg {
-        arg: 0,
-        encoder: Encoder::Value,
-    }],
-    calls: &[552],
-    special: None,
-    set_state: &[],
-    platform_value: None,
-    platform_call: None,
-    target_field: 1,
-    target_slots: 0,
-    zero_unproven: false,
-}];
+    Recipe {
+        id: "_STCG:1",
+        when: When {
+            arity: Some(1),
+            arity_range: None,
+            equals: &[],
+            kinds: &[(0, ValueKind::Symbol)],
+            one_of: &[],
+            tag_codes: &[],
+            state: &[],
+        },
+        fields: &[],
+        body: &[BodyPart::Arg {
+            arg: 0,
+            encoder: Encoder::Value,
+        }],
+        calls: &[552],
+        special: None,
+        set_state: &[],
+        platform_value: None,
+        platform_call: None,
+        target_field: 1,
+        target_slots: 0,
+        zero_unproven: false,
+    },
+];
 static _STCH_RECIPES: &[Recipe] = &[Recipe {
     id: "_STCH:0",
     when: When {
@@ -8404,6 +8791,138 @@ static _STRT_RECIPES: &[Recipe] = &[Recipe {
     target_slots: 0,
     zero_unproven: false,
 }];
+static _SSW2_RECIPES: &[Recipe] = &[
+    Recipe {
+        id: "_SSW2:scr0510-798-exact-zero-multiplier-no-prior-bank3",
+        when: When {
+            arity: Some(8),
+            arity_range: None,
+            equals: &[
+                (0, "33"),
+                (1, "1"),
+                (2, "6"),
+                (3, "500"),
+                (4, "600"),
+                (5, "0.5"),
+                (6, "-1"),
+                (7, "0"),
+            ],
+            kinds: &[],
+            one_of: &[],
+            tag_codes: &[],
+            state: &[],
+        },
+        fields: &[],
+        body: &[],
+        calls: &[],
+        special: None,
+        set_state: &[],
+        platform_value: None,
+        platform_call: None,
+        target_field: 1,
+        target_slots: 0,
+        zero_unproven: false,
+    },
+    Recipe {
+        id: "_SSW2:scr0510-914-exact-zero-amplitude-lifetime-no-prior-bank3",
+        when: When {
+            arity: Some(8),
+            arity_range: None,
+            equals: &[
+                (0, "9"),
+                (1, "0"),
+                (2, "0"),
+                (3, "0"),
+                (4, "0"),
+                (5, "0"),
+                (6, "0"),
+                (7, "0"),
+            ],
+            kinds: &[],
+            one_of: &[],
+            tag_codes: &[],
+            state: &[],
+        },
+        fields: &[],
+        body: &[],
+        calls: &[],
+        special: None,
+        set_state: &[],
+        platform_value: None,
+        platform_call: None,
+        target_field: 1,
+        target_slots: 0,
+        zero_unproven: false,
+    },
+    Recipe {
+        id: "_SSW2:scr0424-APPROXIMATE-drops-800ms-expiry-slot6",
+        when: When {
+            arity: Some(8),
+            arity_range: None,
+            equals: &[
+                (0, "6"),
+                (1, "3"),
+                (2, "7"),
+                (3, "1000"),
+                (4, "5000"),
+                (5, "1"),
+                (6, "800"),
+                (7, "0"),
+            ],
+            kinds: &[],
+            one_of: &[],
+            tag_codes: &[],
+            state: &[],
+        },
+        fields: &[],
+        body: &[BodyPart::Arg {
+            arg: 0,
+            encoder: Encoder::Value,
+        }],
+        calls: &[628],
+        special: None,
+        set_state: &[],
+        platform_value: None,
+        platform_call: None,
+        target_field: 1,
+        target_slots: 0,
+        zero_unproven: false,
+    },
+    Recipe {
+        id: "_SSW2:scr0424-APPROXIMATE-drops-800ms-expiry-slot7",
+        when: When {
+            arity: Some(8),
+            arity_range: None,
+            equals: &[
+                (0, "7"),
+                (1, "3"),
+                (2, "7"),
+                (3, "1000"),
+                (4, "5000"),
+                (5, "1"),
+                (6, "800"),
+                (7, "0"),
+            ],
+            kinds: &[],
+            one_of: &[],
+            tag_codes: &[],
+            state: &[],
+        },
+        fields: &[],
+        body: &[BodyPart::Arg {
+            arg: 0,
+            encoder: Encoder::Value,
+        }],
+        calls: &[628],
+        special: None,
+        set_state: &[],
+        platform_value: None,
+        platform_call: None,
+        target_field: 1,
+        target_slots: 0,
+        zero_unproven: false,
+    },
+];
 static _STSW_RECIPES: &[Recipe] = &[Recipe {
     id: "_STSW:source",
     when: When {
@@ -8619,28 +9138,55 @@ static _STZ4_RECIPES: &[Recipe] = &[Recipe {
     target_slots: 0,
     zero_unproven: false,
 }];
-static _TOMP_RECIPES: &[Recipe] = &[Recipe {
-    id: "_TOMP:source",
-    when: When {
-        arity: Some(0),
-        arity_range: None,
-        equals: &[],
-        kinds: &[],
-        one_of: &[],
-        tag_codes: &[],
-        state: &[],
+static _TOMP_RECIPES: &[Recipe] = &[
+    Recipe {
+        id: "_TOMP:source",
+        when: When {
+            arity: Some(0),
+            arity_range: None,
+            equals: &[],
+            kinds: &[],
+            one_of: &[],
+            tag_codes: &[],
+            state: &[],
+        },
+        fields: &[],
+        body: &[],
+        calls: &[448],
+        special: None,
+        set_state: &[],
+        platform_value: None,
+        platform_call: None,
+        target_field: 1,
+        target_slots: 0,
+        zero_unproven: false,
     },
-    fields: &[],
-    body: &[],
-    calls: &[448],
-    special: None,
-    set_state: &[],
-    platform_value: None,
-    platform_call: None,
-    target_field: 1,
-    target_slots: 0,
-    zero_unproven: false,
-}];
+    Recipe {
+        id: "_TOMP:index",
+        when: When {
+            arity: Some(1),
+            arity_range: None,
+            equals: &[],
+            kinds: &[(0, ValueKind::Int)],
+            one_of: &[],
+            tag_codes: &[],
+            state: &[],
+        },
+        fields: &[],
+        body: &[BodyPart::Arg {
+            arg: 0,
+            encoder: Encoder::Value,
+        }],
+        calls: &[450],
+        special: None,
+        set_state: &[],
+        platform_value: None,
+        platform_call: None,
+        target_field: 1,
+        target_slots: 0,
+        zero_unproven: false,
+    },
+];
 static _TOMW_RECIPES: &[Recipe] = &[Recipe {
     id: "_TOMW:source",
     when: When {
@@ -8713,6 +9259,28 @@ static _TTCT_RECIPES: &[Recipe] = &[Recipe {
     target_slots: 0,
     zero_unproven: false,
 }];
+static _VCWT_RECIPES: &[Recipe] = &[Recipe {
+    id: "_VCWT:playback",
+    when: When {
+        arity: Some(0),
+        arity_range: None,
+        equals: &[],
+        kinds: &[],
+        one_of: &[],
+        tag_codes: &[],
+        state: &[],
+    },
+    fields: &[],
+    body: &[],
+    calls: &[608],
+    special: None,
+    set_state: &[],
+    platform_value: None,
+    platform_call: None,
+    target_field: 1,
+    target_slots: 0,
+    zero_unproven: false,
+}];
 static _VLOG_RECIPES: &[Recipe] = &[
     Recipe {
         id: "_VLOG:0",
@@ -8768,6 +9336,70 @@ static _VLOG_RECIPES: &[Recipe] = &[
             },
         ],
         calls: &[424],
+        special: None,
+        set_state: &[],
+        platform_value: None,
+        platform_call: None,
+        target_field: 1,
+        target_slots: 0,
+        zero_unproven: false,
+    },
+];
+static _VPL2_RECIPES: &[Recipe] = &[
+    Recipe {
+        id: "_VPL2:immediate",
+        when: When {
+            arity: Some(2),
+            arity_range: None,
+            equals: &[],
+            kinds: &[(0, ValueKind::Symbol), (1, ValueKind::Int)],
+            one_of: &[],
+            tag_codes: &[],
+            state: &[],
+        },
+        fields: &[],
+        body: &[
+            BodyPart::Lit(&[LitInstr {
+                opcode: 0,
+                operands: &[LitOp::Num(0)],
+            }]),
+            BodyPart::Arg {
+                arg: 0,
+                encoder: Encoder::Value,
+            },
+        ],
+        calls: &[416, 607],
+        special: None,
+        set_state: &[],
+        platform_value: None,
+        platform_call: None,
+        target_field: 1,
+        target_slots: 0,
+        zero_unproven: false,
+    },
+    Recipe {
+        id: "_VPL2:label",
+        when: When {
+            arity: Some(2),
+            arity_range: None,
+            equals: &[],
+            kinds: &[(0, ValueKind::Symbol), (1, ValueKind::Symbol)],
+            one_of: &[],
+            tag_codes: &[],
+            state: &[],
+        },
+        fields: &[],
+        body: &[
+            BodyPart::Lit(&[LitInstr {
+                opcode: 0,
+                operands: &[LitOp::Num(0)],
+            }]),
+            BodyPart::Arg {
+                arg: 0,
+                encoder: Encoder::Value,
+            },
+        ],
+        calls: &[416, 607],
         special: None,
         set_state: &[],
         platform_value: None,
@@ -10062,6 +10694,49 @@ static _WKST_RECIPES: &[Recipe] = &[
         target_slots: 0,
         zero_unproven: false,
     },
+    Recipe {
+        id: "_WKST:expression",
+        when: When {
+            arity: Some(3),
+            arity_range: None,
+            equals: &[],
+            kinds: &[
+                (0, ValueKind::Flag),
+                (1, ValueKind::Symbol),
+                (2, ValueKind::Expression),
+            ],
+            one_of: &[],
+            tag_codes: &[],
+            state: &[],
+        },
+        fields: &[],
+        body: &[
+            BodyPart::Arg {
+                arg: 2,
+                encoder: Encoder::Value,
+            },
+            BodyPart::Arg {
+                arg: 1,
+                encoder: Encoder::Value,
+            },
+            BodyPart::Arg {
+                arg: 0,
+                encoder: Encoder::FlagIndex,
+            },
+            BodyPart::Arg {
+                arg: 0,
+                encoder: Encoder::FlagBank,
+            },
+        ],
+        calls: &[233],
+        special: None,
+        set_state: &[],
+        platform_value: None,
+        platform_call: None,
+        target_field: 1,
+        target_slots: 0,
+        zero_unproven: false,
+    },
 ];
 static _WNTY_RECIPES: &[Recipe] = &[
     Recipe {
@@ -10585,12 +11260,20 @@ pub static COMMANDS: &[CommandTable] = &[
         recipes: _RDST_RECIPES,
     },
     CommandTable {
+        name: "_RTM2",
+        recipes: _RTM2_RECIPES,
+    },
+    CommandTable {
         name: "_RTM_",
         recipes: _RTM__RECIPES,
     },
     CommandTable {
         name: "_SACL",
         recipes: _SACL_RECIPES,
+    },
+    CommandTable {
+        name: "_SBAS",
+        recipes: _SBAS_RECIPES,
     },
     CommandTable {
         name: "_SCH2",
@@ -10689,6 +11372,10 @@ pub static COMMANDS: &[CommandTable] = &[
         recipes: _STCC_RECIPES,
     },
     CommandTable {
+        name: "_SSW2",
+        recipes: _SSW2_RECIPES,
+    },
+    CommandTable {
         name: "_STCF",
         recipes: _STCF_RECIPES,
     },
@@ -10773,8 +11460,16 @@ pub static COMMANDS: &[CommandTable] = &[
         recipes: _TTCT_RECIPES,
     },
     CommandTable {
+        name: "_VCWT",
+        recipes: _VCWT_RECIPES,
+    },
+    CommandTable {
         name: "_VLOG",
         recipes: _VLOG_RECIPES,
+    },
+    CommandTable {
+        name: "_VPL2",
+        recipes: _VPL2_RECIPES,
     },
     CommandTable {
         name: "_VPLY",

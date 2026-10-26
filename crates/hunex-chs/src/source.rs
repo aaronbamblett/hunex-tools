@@ -7,7 +7,7 @@
 //! The classification keeps the raw spelling and records a kind: empty, text
 //! (contains `$`, with `^` replaced by LF), tag (leading backtick), flag
 //! (`F`/`G`/`_D` plus decimal digits), int (decimal or `0x` hexadecimal),
-//! expression (digits, whitespace and `+ - ( )`; `* / %` are rejected), image
+//! expression (literals, flag reads and `+ - | & ( )`; `* / %` are rejected), image
 //! (starts with `img`) and symbol (everything else). Digits are ASCII. See
 //! `docs/formats/chs-format.md` for how the compiler lowers each kind.
 //!
@@ -180,6 +180,17 @@ impl Value {
 pub enum Expr {
     /// An integer literal.
     Lit(i64),
+    /// VM flag read.
+    Flag {
+        /// Variable index.
+        index: u32,
+        /// VM bank: F=0, G=1, compatibility=2.
+        bank: u8,
+    },
+    /// Bitwise OR.
+    Or(Box<Expr>, Box<Expr>),
+    /// Bitwise AND.
+    And(Box<Expr>, Box<Expr>),
     /// Unary minus.
     Neg(Box<Expr>),
     /// Addition.
@@ -457,9 +468,18 @@ fn classify(raw: &str, offset: usize) -> Result<Value, ParseError> {
         }
     }
     if !raw.is_empty()
-        && raw
-            .chars()
-            .all(|cell| cell.is_ascii_digit() || cell.is_whitespace() || "+*/()%-".contains(cell))
+        && raw.chars().all(|cell| {
+            cell.is_ascii_digit()
+                || (raw.contains("0x")
+                    && (raw
+                        .trim_start()
+                        .starts_with(|c: char| c.is_ascii_digit() || "+-(".contains(c))
+                        || raw.contains(['|', '&']))
+                    && "abcdefABCDEFx".contains(cell))
+                || cell.is_whitespace()
+                || ("+*/()%-".contains(cell)
+                    || (raw.contains(['|', '&']) && "|&FG_D".contains(cell)))
+        })
     {
         let chars: Vec<char> = raw.chars().collect();
         let mut reader = ExprReader {
@@ -469,7 +489,7 @@ fn classify(raw: &str, offset: usize) -> Result<Value, ParseError> {
             depth: 0,
             nodes: 0,
         };
-        let expr = reader.sum()?;
+        let expr = reader.bit_or()?;
         if reader.pos != chars.len() {
             return Err(ParseError::UnsupportedExpression { offset });
         }
@@ -500,6 +520,34 @@ impl ExprReader<'_> {
     fn skip_space(&mut self) {
         while self.pos < self.chars.len() && self.chars[self.pos].is_whitespace() {
             self.pos += 1;
+        }
+    }
+
+    fn bit_or(&mut self) -> Result<Expr, ParseError> {
+        let mut left = self.bit_and()?;
+        loop {
+            self.skip_space();
+            if self.chars.get(self.pos) != Some(&'|') {
+                return Ok(left);
+            }
+            self.pos += 1;
+            let right = self.bit_and()?;
+            self.node()?;
+            left = Expr::Or(Box::new(left), Box::new(right));
+        }
+    }
+
+    fn bit_and(&mut self) -> Result<Expr, ParseError> {
+        let mut left = self.sum()?;
+        loop {
+            self.skip_space();
+            if self.chars.get(self.pos) != Some(&'&') {
+                return Ok(left);
+            }
+            self.pos += 1;
+            let right = self.sum()?;
+            self.node()?;
+            left = Expr::And(Box::new(left), Box::new(right));
         }
     }
 
@@ -574,7 +622,7 @@ impl ExprReader<'_> {
             Some(&'(') => {
                 self.pos += 1;
                 self.descend()?;
-                let inner = self.sum()?;
+                let inner = self.bit_or()?;
                 self.depth -= 1;
                 self.skip_space();
                 if self.chars.get(self.pos) != Some(&')') {
@@ -584,6 +632,34 @@ impl ExprReader<'_> {
                 }
                 self.pos += 1;
                 Ok(inner)
+            }
+            Some(&'F' | &'G' | &'_') => {
+                let bank = match self.chars[self.pos] {
+                    'F' => 0,
+                    'G' => 1,
+                    _ => 2,
+                };
+                self.pos += 1;
+                if bank == 2 {
+                    if self.chars.get(self.pos) != Some(&'D') {
+                        return Err(ParseError::UnsupportedExpression {
+                            offset: self.offset,
+                        });
+                    }
+                    self.pos += 1;
+                }
+                let start = self.pos;
+                while self.chars.get(self.pos).is_some_and(char::is_ascii_digit) {
+                    self.pos += 1;
+                }
+                let text: String = self.chars[start..self.pos].iter().collect();
+                let index = text
+                    .parse()
+                    .map_err(|_| ParseError::UnsupportedExpression {
+                        offset: self.offset,
+                    })?;
+                self.node()?;
+                Ok(Expr::Flag { index, bank })
             }
             Some(cell) if cell.is_ascii_digit() => self.number(),
             _ => Err(ParseError::UnsupportedExpression {

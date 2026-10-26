@@ -16,7 +16,7 @@ This is an unofficial fan project. It is not affiliated with HuneX.
 - a game, a patch, or a translation. It does not run the game.
 - a source of game data. The repository contains no game files, dumps, keys or extracted assets. You supply the files from a copy of a game you own.
 
-Work on a copy of the game's files, and do not edit the game's folder. The [guides](docs/guides/README.md) show each task step by step.
+Work on a copy of the game's files, and do not edit the game's folder. The [guides](docs/guides/README.md) show each task step by step. The [engine opcode reference](docs/engine/README.md) describes the script opcodes of the HuneX VM as seen in two engine builds.
 
 ## Format status
 

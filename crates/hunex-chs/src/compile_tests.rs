@@ -1,6 +1,7 @@
 use super::compile::*;
 use super::normalize::{normalize, NormInstruction, NormOperand};
 use crate::source;
+use alloc::format;
 use alloc::string::String;
 use alloc::vec;
 use alloc::vec::Vec;
@@ -81,6 +82,64 @@ fn cktt_keeps_leading_zeros_as_six() {
             ins(897, vec![]),
         ]
     );
+}
+
+#[test]
+fn stcg_image_and_symbol_names_compile_to_the_same_bytes() {
+    assert_eq!(
+        statement_list("_STCG(tsu_img0001);", &[]),
+        vec![ins(3, vec![text("tsu_img0001")]), ins(552, vec![])]
+    );
+    assert_eq!(
+        statement_list("_STCG(img0242);", &[]),
+        vec![ins(3, vec![text("img0242")]), ins(552, vec![])]
+    );
+}
+
+#[test]
+fn stcg_rejects_a_non_name_argument() {
+    let statements = source::parse("_STCG(5);").unwrap();
+    assert!(compile(&statements, &[]).is_err());
+}
+
+#[test]
+fn fcsp_with_a_duration_pushes_it_and_calls_0x25e() {
+    assert_eq!(
+        statement_list("_FCSP(2000);", &[]),
+        vec![ins(0, vec![num(2000)]), ins(0x25E, vec![])]
+    );
+    assert_eq!(statement_list("_FCSP();", &[]), vec![ins(0x3A1, vec![])]);
+}
+
+#[test]
+fn sbas_pushes_parent_then_child_and_calls_0x25c() {
+    assert_eq!(
+        statement_list("_SBAS(6,5);", &[]),
+        vec![
+            ins(0, vec![num(5)]),
+            ins(0, vec![num(6)]),
+            ins(0x25C, vec![])
+        ]
+    );
+    assert_eq!(
+        statement_list("_SBAS(37,-1);", &[]),
+        vec![
+            ins(0, vec![num(0)]),
+            ins(0, vec![num(1)]),
+            ins(0x21, vec![]),
+            ins(0, vec![num(37)]),
+            ins(0x25C, vec![]),
+        ]
+    );
+}
+
+#[test]
+fn tomp_with_an_index_calls_0x1c2_and_bare_tomp_keeps_0x1c0() {
+    assert_eq!(
+        statement_list("_TOMP(8);", &[]),
+        vec![ins(0, vec![num(8)]), ins(0x1C2, vec![])]
+    );
+    assert_eq!(statement_list("_TOMP();", &[]), vec![ins(0x1C0, vec![])]);
 }
 
 #[test]
@@ -413,4 +472,128 @@ fn string_pool_uses_first_use_order() {
         .collect();
     assert_eq!(strings[0], crate::recipes::PROLOGUE_ERROR.as_bytes());
     assert_eq!(strings[1], "1".as_bytes());
+}
+
+#[test]
+fn masked_persistent_or_reads_combines_and_stores() {
+    assert_eq!(
+        statement_list("_WKST(G016,eq,(G016|2)&65535);", &[]),
+        vec![
+            ins(0, vec![num(16)]),
+            ins(0, vec![num(1)]),
+            ins(0xea, vec![]),
+            ins(0, vec![num(2)]),
+            ins(0x26, vec![]),
+            ins(0, vec![num(65535)]),
+            ins(0x25, vec![]),
+            ins(3, vec![text("eq")]),
+            ins(0, vec![num(16)]),
+            ins(0, vec![num(1)]),
+            ins(0xe9, vec![]),
+        ]
+    );
+}
+
+#[test]
+fn masked_or_accepts_hexadecimal_operands() {
+    for (operand, decimal) in [
+        ("1", 1),
+        ("2", 2),
+        ("0x2", 2),
+        ("0xff", 255),
+        ("0xABCD", 43981),
+    ] {
+        assert_eq!(
+            statement_list(&format!("_WKST(G016,eq,(G016|({operand}))&65535);"), &[]),
+            statement_list(&format!("_WKST(G016,eq,(G016|({decimal}))&65535);"), &[]),
+            "{operand}",
+        );
+    }
+}
+
+#[test]
+fn mply_start_offset_is_carried_in_mode_without_changing_fades_or_volume() {
+    assert_eq!(
+        statement_list("_MPLY(8,,`001:3000,,`017:80,,`069:502272);", &[]),
+        vec![
+            ins(0, vec![num(0)]),
+            ins(0, vec![num(3000)]),
+            ins(0, vec![num(0x8000_0001 | (502272 << 2))]),
+            ins(0, vec![num(80)]),
+            ins(0, vec![num(8)]),
+            ins(0x180, vec![]),
+        ]
+    );
+    assert_eq!(
+        statement_list("_MPLY(8,,`069:0);", &[]),
+        statement_list("_MPLY(8);", &[])
+    );
+    for src in [
+        "_MPLY(8,,`069:536870912);",
+        "_MPLY(8,,`069:-1);",
+        "_MPLY(8,,`069:1,,`069:2);",
+    ] {
+        assert!(compile(&crate::source::parse(src).unwrap(), &[]).is_err());
+    }
+}
+
+#[test]
+fn voice_pair_stages_starts_then_waits() {
+    assert_eq!(
+        statement_list("_VPL2(VOICE,03d00);", &[]),
+        vec![
+            ins(0, vec![num(0)]),
+            ins(3, vec![text("VOICE")]),
+            ins(0x1a0, vec![]),
+            ins(0x25f, vec![]),
+        ]
+    );
+    assert_eq!(statement_list("_VCWT();", &[]), vec![ins(0x260, vec![])]);
+}
+
+#[test]
+fn rtm2_preserves_music_without_returning() {
+    assert_eq!(statement_list("_RTM2();", &[]), vec![ins(0x261, vec![])]);
+}
+
+#[test]
+fn sepl_category_shapes_keep_playback_pushes_but_drop_category() {
+    for (suffix, delay, fade, volume) in [
+        (",,`001:200,,`017:30,,`068:500,,`070:2", 500, 200, 30),
+        (",,`001:200,,`017:30,,`070:3", 0, 200, 30),
+        (",,`017:30,,`068:500,,`070:10", 500, 0, 30),
+        (",,`017:30,,`070:16", 0, 0, 30),
+        (",,`070:2", 0, 0, 100),
+    ] {
+        assert_eq!(
+            statement_list(&format!("_SEPL(19,1,FATE_SE142{suffix});"), &[]),
+            vec![
+                ins(0, vec![num(delay)]),
+                ins(0, vec![num(fade)]),
+                ins(0, vec![num(64)]),
+                ins(0, vec![num(volume)]),
+                ins(3, vec![text("FATE_SE142")]),
+                ins(0, vec![num(1)]),
+                ins(0, vec![num(19)]),
+                ins(0x190, vec![]),
+            ]
+        );
+    }
+}
+
+#[test]
+fn ssw2_scr0510_zero_shapes_emit_no_instructions() {
+    for source in ["_SSW2(33,1,6,500,600,0.5,-1,0);", "_SSW2(9,0,0,0,0,0,0,0);"] {
+        assert_eq!(statement_list(source, &[]), vec![]);
+    }
+}
+
+#[test]
+fn ssw2_scr0424_800ms_shapes_approximate_with_persistent_stsw() {
+    for slot in [6, 7] {
+        assert_eq!(
+            statement_list(&format!("_SSW2({slot},3,7,1000,5000,1,800,0);"), &[]),
+            vec![ins(0, vec![num(slot)]), ins(0x274, vec![])]
+        );
+    }
 }

@@ -2,7 +2,7 @@ use alloc::vec;
 use alloc::vec::Vec;
 
 use crate::bntx::{Bntx, Texture};
-use crate::deswizzle::{block_height, deswizzle, GOB_BYTES, GOB_WIDTH};
+use crate::deswizzle::{deswizzle, GOB_BYTES, GOB_WIDTH};
 use crate::{Error, MAX_TEXTURE_PIXELS, MAX_TEXTURE_SIDE};
 
 /// Decoded pixels: RGBA, row by row, four bytes per pixel.
@@ -38,11 +38,10 @@ fn codec(code: u32) -> Result<(Codec, usize, usize), Error> {
     }
 }
 
-/// The stored size of a texture with these units, as the block-linear layout stores it, or
-/// `None` when it does not fit in `usize`.
-pub fn stored_size(row_bytes: usize, rows: usize) -> Option<usize> {
+/// The stored size of a texture with these units and block height (in GOBs), as the block-linear
+/// layout stores it, or `None` when it does not fit in `usize`.
+pub fn stored_size(row_bytes: usize, rows: usize, block: usize) -> Option<usize> {
     let cols = row_bytes.div_ceil(GOB_WIDTH);
-    let block = block_height(rows);
     rows.div_ceil(8 * block)
         .checked_mul(block)?
         .checked_mul(cols)?
@@ -69,7 +68,8 @@ pub fn decode_texture(bntx: &Bntx<'_>, index: usize) -> Result<Rgba, Error> {
     let width_units = width.div_ceil(unit);
     let rows = height.div_ceil(unit);
     let row_bytes = width_units * bytes_per_unit;
-    let expected = stored_size(row_bytes, rows).ok_or(Error::Limit {
+    let block = 1usize << (texture.layout & 7);
+    let expected = stored_size(row_bytes, rows, block).ok_or(Error::Limit {
         what: "texture layout",
     })?;
     if expected != texture.image_size {
@@ -81,7 +81,6 @@ pub fn decode_texture(bntx: &Bntx<'_>, index: usize) -> Result<Rgba, Error> {
     }
     let data = bntx.data(index)?;
     let cols = row_bytes.div_ceil(GOB_WIDTH);
-    let block = block_height(rows);
     let units = deswizzle(data, row_bytes, rows, cols, block);
 
     let mut pixels = vec![0u8; width * height * 4];
