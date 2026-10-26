@@ -83,7 +83,7 @@ Usage: `hunex chs compile <script.txt> (--names <nam.bin> | --scene-map <map.txt
 | `--warnings all` | Print every unproven zero-emission selection with its `line:column`. Without it, one summary line per command is printed instead. |
 | `-o <out.chs>` | The script to write. Required. |
 
-Selections of zero-emission predicates that are not proven on the corpus print to stderr but still compile: by default one summary line per command, such as `warning: 627 statements use zero-emission rules not proven on the corpus: _WKST 410, _WNTY 120`. Errors print the `line:column` position (1-based) and exit non-zero.
+Selections of zero-emission rules that are not proven on the corpus print to stderr but still compile: by default one summary line per command, such as `warning: 627 statements use zero-emission rules not proven on the corpus: _WKAD 75, _WKST 450, _WNTY 100, _ZZ 2`. Errors print the `line:column` position (1-based) and exit non-zero.
 
 Example: `hunex chs compile scr0001.txt --names nam.bin -o 1_0.chs`
 

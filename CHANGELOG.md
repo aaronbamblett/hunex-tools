@@ -1,14 +1,13 @@
 # Changelog
 
-## Unreleased
+## 0.2.0
 
-- `hunex chs compile`: compile Switch script text to a Steam `.chs` file. It holds a parser for `_NAME(arguments);` statements, the engine recipe table for 92 commands, and a lowering with labels, conditionals, jumps and messages. It emits no Debug records and interns strings in first-use order.
+- `hunex chs compile`: compile Switch script text to a Steam `.chs` file. It holds a parser for `_NAME(arguments);` statements, the engine recipe table for 97 commands, and a lowering with labels, conditionals, jumps and messages. It emits no Debug records and interns strings in first-use order.
 - `hunex-chs` APIs: `source` parses Switch script text, `normalize` reduces a program to the Debug-free form used for comparison, `compile` lowers statements with the recipe table, and `compare` classifies a scene as exact, shape or authored.
 - Verified in game: a Mahoyo scene compiled from Switch text plays through in the Steam release of Witch on the Holy Night.
-- `hunex chs compile`: `_SBAS(child,parent)` lowers to opcode 0x25C, which only a patched executable registers. 0x25C is now in the opcode table.
-- `hunex chs compile`: `_TOMP(n)` with one integer lowers to opcode 0x1C2 (play movie by index), which only a patched executable registers; `_TOMP()` still lowers to 0x1C0. 0x1C2 is now in the opcode table.
-- `hunex chs compile`: `_FCSP(duration)` lowers to opcode 0x25E, which only a patched executable registers. 0x25E is now in the opcode table.
-- Corpus counts, cumulative over 249 Mahoyo scenes: 162 match exactly, 216 including retuned literals (shape), 242 including reviewed release edits (authored).
+- `hunex chs compile`: lower `_TOMP(n)` to 0x1C2, `_SBAS(child,parent)` to 0x25C, `_FCSP(duration)` to 0x25E, `_VPL2` to VPLY followed by 0x25F, `_VCWT()` to 0x260, and `_RTM2()` to 0x261. These opcodes require a patched executable.
+- Switch writers: the MRG set writer (index, names and layout), the Switch MZX0 encoder, the `allscr.mrg` writer (`switch-script pack`), the script text writer (`switch-text import`), and the Nintendo OPUS writer (`nopus from-ogg`). Each one is checked on the sample files.
+- Corpus counts, cumulative over 249 Mahoyo scenes: 162 match exactly, 216 including shape matches (source-numeric drift only), 242 including reviewed release edits (authored).
 
 ## 0.1.0
 
@@ -22,7 +21,6 @@ First release. It contains:
 - hunex-ogg: Ogg page reader and writer with CRC checks.
 - hunex-hw: reader and writer for `.hw` audio (64-byte header and Ogg Vorbis payload).
 - hunex-nopus: reader for Nintendo OPUS audio, and a remux to Ogg Opus (RFC 7845) that copies the packets unchanged.
-- Switch writers: the MRG set writer (index, names and layout), the Switch MZX0 encoder, the `allscr.mrg` writer (`switch-script pack`), the script text writer (`switch-text import`), and the Nintendo OPUS writer (`nopus from-ogg`). Each one is checked on the sample files.
 - hunex-mzx: MZX0 decoder and encoder for the PC and Switch variants. The PC decoder resets its repeat value at each 4096-word window; the encoder writes literals and back-references only.
 - hunex-mzp: MZP container reader and writer, with the PC and Switch size rules and 0xFF padding.
 - hunex-image: background images. HEP palette tiles abut at full size into an RGBA canvas, and encode back to MZP. `from-png --like` keeps unchanged tiles byte for byte and re-encodes changed ones. Font atlases (bitmap type 0x01) use a swizzled palette order.

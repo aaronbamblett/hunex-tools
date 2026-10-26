@@ -42,6 +42,8 @@ Each crate enables `#![warn(missing_docs)]`, and the documentation gate turns wa
 
 Some tests read real game files. Each one is skipped unless its environment variable is set. Set only the variables for the tests you want to run. Point each variable at a copy of the files, never at the game install. These copies are the sample files that the notes in [docs/formats](docs/formats/README.md) refer to. See [getting started](docs/guides/getting-started.md).
 
+The `compile_corpus` comparison also needs maintainer-provided `authored-diffs-v2.json`, `expected-classes.json`, `scene-order.json` and `scene-numbers.json` fixtures. These cannot be reproduced from this repository. Without the required fixture paths, the comparison skips.
+
 Run gated tests with the variables set in the same command:
 
 ```text
@@ -74,6 +76,12 @@ HUNEX_CHS_DIR=/path/to/chs HUNEX_WORK=/var/tmp/hunex-work cargo test -p hunex-ch
 | `HUNEX_COMPILE_AUTHORED` | The reviewed `authored-diffs-v2.json` manifest. | `hunex-chs` `compile_corpus` | The compile comparison is skipped with a message. |
 | `HUNEX_COMPILE_EXPECTED_CLASSES` | The `expected-classes.json` fixture: expected class per scene. | `hunex-chs` `compile_corpus` | The compile comparison is skipped with a message. |
 | `HUNEX_UPDATE_DOCS` | Set to `1` to rewrite `docs/formats/opcodes.md` from the opcode table. | `hunex-chs` `opcodes_doc` | The test fails if the file is out of date. |
+
+## Comments and tests
+
+Default to no comments. When needed, use at most one line for a why the code cannot show: a format quirk, an engine workaround, or an order that matters. Never narrate, restate the code, describe the bug being fixed, or record history; git carries that. Target 4–7 comment lines per 100 lines of code, never above about 8% in new code, and no comment blocks of three or more lines. Public API docs required by `missing_docs` must explain useful contracts.
+
+Test core behaviour only. Extend an existing test before adding a file; do not add a test for every bug fix.
 
 ## Clean-room policy
 
