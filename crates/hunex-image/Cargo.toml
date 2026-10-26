@@ -11,5 +11,5 @@ categories = ["multimedia::images", "no-std"]
 readme = "README.md"
 
 [dependencies]
-hunex-mzp = { path = "../hunex-mzp", version = "0.1.0" }
-hunex-mzx = { path = "../hunex-mzx", version = "0.1.0" }
+hunex-mzp = { path = "../hunex-mzp", version = "0.2.0" }
+hunex-mzx = { path = "../hunex-mzx", version = "0.2.0" }
