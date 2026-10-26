@@ -158,7 +158,8 @@ fn bad_headers_and_tiles_are_rejected() {
     assert_eq!(
         decode(&refs),
         Err(Error::BadHeader {
-            field: "transparency count"
+            field: "transparency count",
+            dimensions: Some((512, 256))
         })
     );
 
@@ -278,7 +279,8 @@ fn an_oversized_canvas_is_rejected_before_its_tiles_are_read() {
     assert_eq!(
         decode(&entries),
         Err(Error::BadHeader {
-            field: "canvas size"
+            field: "canvas size",
+            dimensions: Some((65535, 65535))
         })
     );
 }
@@ -302,4 +304,24 @@ fn a_tile_stream_declaring_a_huge_output_is_rejected() {
 fn a_header_field_beyond_u16_is_an_error_not_a_truncated_value() {
     let rgba = vec![0u8; 70_000 * 4];
     assert!(encode(&rgba, 70_000, 1, None).is_err());
+}
+
+#[test]
+fn canvas_limit_covers_full_story_and_rejects_larger_allocations() {
+    assert_eq!(canvas_pixels(11264, 7680), Ok(MAX_CANVAS_PIXELS));
+    assert_eq!(canvas_pixels(10752, 6400), Ok(68_812_800));
+    for (width, height) in [(MAX_CANVAS_PIXELS + 1, 1), (usize::MAX, 2)] {
+        let error = canvas_pixels(width, height).unwrap_err();
+        assert_eq!(
+            error,
+            Error::BadHeader {
+                field: "canvas size",
+                dimensions: Some((width, height)),
+            }
+        );
+        assert_eq!(
+            alloc::format!("{error}"),
+            alloc::format!("image header: bad canvas size ({width}x{height})")
+        );
+    }
 }
