@@ -156,6 +156,14 @@ fn strr_pushes_angle_then_slot_and_calls_0x25d() {
 }
 
 #[test]
+fn sela_save_calls_0x262_without_operands() {
+    assert_eq!(
+        statement_list("_SELA_SAVE();", &[]),
+        vec![ins(0x262, vec![])]
+    );
+}
+
+#[test]
 fn tomp_with_an_index_calls_0x1c2_and_bare_tomp_keeps_0x1c0() {
     assert_eq!(
         statement_list("_TOMP(8);", &[]),
