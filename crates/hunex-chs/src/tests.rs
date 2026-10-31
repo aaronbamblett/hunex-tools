@@ -154,7 +154,7 @@ fn pool_bytes_that_decode_as_instructions_do_not_move_the_pool() {
 
 #[test]
 fn registered_table_entries() {
-    assert_eq!(OPCODES.len(), 165);
+    assert_eq!(OPCODES.len(), 166);
     assert!(OPCODES.iter().all(|info| info.operands <= MAX_OPERANDS));
     assert_eq!(opcode_info(0x7B).map(|i| i.operands), Some(3));
     assert_eq!(opcode_info(0x7F).map(|i| i.operands), Some(2));

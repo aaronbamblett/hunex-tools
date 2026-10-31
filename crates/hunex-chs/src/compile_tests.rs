@@ -134,6 +134,28 @@ fn sbas_pushes_parent_then_child_and_calls_0x25c() {
 }
 
 #[test]
+fn strr_pushes_angle_then_slot_and_calls_0x25d() {
+    assert_eq!(
+        statement_list("_STRR(16,-1386);", &[]),
+        vec![
+            ins(0, vec![num(0)]),
+            ins(0, vec![num(1386)]),
+            ins(0x21, vec![]),
+            ins(0, vec![num(16)]),
+            ins(0x25D, vec![]),
+        ]
+    );
+    assert_eq!(
+        statement_list("_STRR(38,9000);", &[]),
+        vec![
+            ins(0, vec![num(9000)]),
+            ins(0, vec![num(38)]),
+            ins(0x25D, vec![]),
+        ]
+    );
+}
+
+#[test]
 fn tomp_with_an_index_calls_0x1c2_and_bare_tomp_keeps_0x1c0() {
     assert_eq!(
         statement_list("_TOMP(8);", &[]),

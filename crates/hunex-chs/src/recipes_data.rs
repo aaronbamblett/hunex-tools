@@ -8681,6 +8681,37 @@ static _STRA_RECIPES: &[Recipe] = &[
         zero_unproven: false,
     },
 ];
+static _STRR_RECIPES: &[Recipe] = &[Recipe {
+    id: "_STRR:0",
+    when: When {
+        arity: Some(2),
+        arity_range: None,
+        equals: &[],
+        kinds: &[(0, ValueKind::Int), (1, ValueKind::Int)],
+        one_of: &[],
+        tag_codes: &[],
+        state: &[],
+    },
+    fields: &[],
+    body: &[
+        BodyPart::Arg {
+            arg: 1,
+            encoder: Encoder::Value,
+        },
+        BodyPart::Arg {
+            arg: 0,
+            encoder: Encoder::Value,
+        },
+    ],
+    calls: &[605],
+    special: None,
+    set_state: &[],
+    platform_value: None,
+    platform_call: None,
+    target_field: 1,
+    target_slots: 0,
+    zero_unproven: false,
+}];
 static _STRT_RECIPES: &[Recipe] = &[Recipe {
     id: "_STRT:0",
     when: When {
@@ -11470,6 +11501,10 @@ pub static COMMANDS: &[CommandTable] = &[
     CommandTable {
         name: "_STRA",
         recipes: _STRA_RECIPES,
+    },
+    CommandTable {
+        name: "_STRR",
+        recipes: _STRR_RECIPES,
     },
     CommandTable {
         name: "_STRT",
