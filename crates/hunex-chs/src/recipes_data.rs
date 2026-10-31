@@ -8681,6 +8681,37 @@ static _STRA_RECIPES: &[Recipe] = &[
         zero_unproven: false,
     },
 ];
+static _STRR_RECIPES: &[Recipe] = &[Recipe {
+    id: "_STRR:0",
+    when: When {
+        arity: Some(2),
+        arity_range: None,
+        equals: &[],
+        kinds: &[(0, ValueKind::Int), (1, ValueKind::Int)],
+        one_of: &[],
+        tag_codes: &[],
+        state: &[],
+    },
+    fields: &[],
+    body: &[
+        BodyPart::Arg {
+            arg: 1,
+            encoder: Encoder::Value,
+        },
+        BodyPart::Arg {
+            arg: 0,
+            encoder: Encoder::Value,
+        },
+    ],
+    calls: &[605],
+    special: None,
+    set_state: &[],
+    platform_value: None,
+    platform_call: None,
+    target_field: 1,
+    target_slots: 0,
+    zero_unproven: false,
+}];
 static _STRT_RECIPES: &[Recipe] = &[Recipe {
     id: "_STRT:0",
     when: When {
@@ -9198,6 +9229,53 @@ static _TOMW_RECIPES: &[Recipe] = &[Recipe {
     fields: &[],
     body: &[],
     calls: &[449],
+    special: None,
+    set_state: &[],
+    platform_value: None,
+    platform_call: None,
+    target_field: 1,
+    target_slots: 0,
+    zero_unproven: false,
+}];
+static _TQST_RECIPES: &[Recipe] = &[Recipe {
+    id: "_TQST:0",
+    when: When {
+        arity: None,
+        arity_range: Some((1, 2)),
+        equals: &[],
+        kinds: &[],
+        one_of: &[],
+        tag_codes: &[],
+        state: &[],
+    },
+    fields: &[
+        Field {
+            source: 0,
+            encoder: Encoder::Value,
+            empty: &[LitInstr {
+                opcode: 0,
+                operands: &[LitOp::Num(0)],
+            }],
+            absent: &[LitInstr {
+                opcode: 0,
+                operands: &[LitOp::Num(0)],
+            }],
+        },
+        Field {
+            source: 1,
+            encoder: Encoder::Value,
+            empty: &[LitInstr {
+                opcode: 0,
+                operands: &[LitOp::Num(0)],
+            }],
+            absent: &[LitInstr {
+                opcode: 0,
+                operands: &[LitOp::Num(0)],
+            }],
+        },
+    ],
+    body: &[],
+    calls: &[625],
     special: None,
     set_state: &[],
     platform_value: None,
@@ -11425,6 +11503,10 @@ pub static COMMANDS: &[CommandTable] = &[
         recipes: _STRA_RECIPES,
     },
     CommandTable {
+        name: "_STRR",
+        recipes: _STRR_RECIPES,
+    },
+    CommandTable {
         name: "_STRT",
         recipes: _STRT_RECIPES,
     },
@@ -11447,6 +11529,10 @@ pub static COMMANDS: &[CommandTable] = &[
     CommandTable {
         name: "_TOMW",
         recipes: _TOMW_RECIPES,
+    },
+    CommandTable {
+        name: "_TQST",
+        recipes: _TQST_RECIPES,
     },
     CommandTable {
         name: "_TRPY",

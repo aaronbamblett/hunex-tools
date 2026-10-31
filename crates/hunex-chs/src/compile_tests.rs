@@ -134,6 +134,28 @@ fn sbas_pushes_parent_then_child_and_calls_0x25c() {
 }
 
 #[test]
+fn strr_pushes_angle_then_slot_and_calls_0x25d() {
+    assert_eq!(
+        statement_list("_STRR(16,-1386);", &[]),
+        vec![
+            ins(0, vec![num(0)]),
+            ins(0, vec![num(1386)]),
+            ins(0x21, vec![]),
+            ins(0, vec![num(16)]),
+            ins(0x25D, vec![]),
+        ]
+    );
+    assert_eq!(
+        statement_list("_STRR(38,9000);", &[]),
+        vec![
+            ins(0, vec![num(9000)]),
+            ins(0, vec![num(38)]),
+            ins(0x25D, vec![]),
+        ]
+    );
+}
+
+#[test]
 fn tomp_with_an_index_calls_0x1c2_and_bare_tomp_keeps_0x1c0() {
     assert_eq!(
         statement_list("_TOMP(8);", &[]),
@@ -733,4 +755,54 @@ fn tiny_script_compiles_to_a_header_matching_real_files() {
     assert_eq!(&bytes[35..48], &[0u8; 13]);
     let script = crate::Script::parse(&bytes).unwrap();
     assert_eq!(script.encode(), bytes);
+}
+
+#[test]
+fn tqst_pushes_bank_before_slot_and_calls_0x271() {
+    for (source, expected) in [
+        (
+            "_TQST(7,0);",
+            vec![
+                ins(0, vec![num(0)]),
+                ins(0, vec![num(7)]),
+                ins(0x271, vec![]),
+            ],
+        ),
+        (
+            "_TQST(7,1);",
+            vec![
+                ins(0, vec![num(1)]),
+                ins(0, vec![num(7)]),
+                ins(0x271, vec![]),
+            ],
+        ),
+        (
+            "_TQST(-1,1);",
+            vec![
+                ins(0, vec![num(1)]),
+                ins(0, vec![num(0)]),
+                ins(0, vec![num(1)]),
+                ins(0x21, vec![]),
+                ins(0x271, vec![]),
+            ],
+        ),
+    ] {
+        assert_eq!(statement_list(source, &[]), expected, "{source}");
+    }
+}
+
+#[test]
+fn shake_bank_spellings_compile_and_round_trip() {
+    let text = "_STQK(7,0,0,34,-1,0,0);_STQK(-1,6,12,34,800,0,0);_STSW(13);                _TQST(7,0);_TQST(-1,1);_TQST(7,1);";
+    let statements = source::parse(text).unwrap();
+    let compiled = compile(&statements, &[]).unwrap();
+    let script = compiled.program().lower().unwrap();
+    assert_eq!(
+        script
+            .instructions()
+            .iter()
+            .filter(|instruction| instruction.opcode() == 0x271)
+            .count(),
+        3
+    );
 }
