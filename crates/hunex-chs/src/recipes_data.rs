@@ -9206,6 +9206,53 @@ static _TOMW_RECIPES: &[Recipe] = &[Recipe {
     target_slots: 0,
     zero_unproven: false,
 }];
+static _TQST_RECIPES: &[Recipe] = &[Recipe {
+    id: "_TQST:0",
+    when: When {
+        arity: None,
+        arity_range: Some((1, 2)),
+        equals: &[],
+        kinds: &[],
+        one_of: &[],
+        tag_codes: &[],
+        state: &[],
+    },
+    fields: &[
+        Field {
+            source: 0,
+            encoder: Encoder::Value,
+            empty: &[LitInstr {
+                opcode: 0,
+                operands: &[LitOp::Num(0)],
+            }],
+            absent: &[LitInstr {
+                opcode: 0,
+                operands: &[LitOp::Num(0)],
+            }],
+        },
+        Field {
+            source: 1,
+            encoder: Encoder::Value,
+            empty: &[LitInstr {
+                opcode: 0,
+                operands: &[LitOp::Num(0)],
+            }],
+            absent: &[LitInstr {
+                opcode: 0,
+                operands: &[LitOp::Num(0)],
+            }],
+        },
+    ],
+    body: &[],
+    calls: &[625],
+    special: None,
+    set_state: &[],
+    platform_value: None,
+    platform_call: None,
+    target_field: 1,
+    target_slots: 0,
+    zero_unproven: false,
+}];
 static _TRPY_RECIPES: &[Recipe] = &[Recipe {
     id: "_TRPY:0",
     when: When {
@@ -11447,6 +11494,10 @@ pub static COMMANDS: &[CommandTable] = &[
     CommandTable {
         name: "_TOMW",
         recipes: _TOMW_RECIPES,
+    },
+    CommandTable {
+        name: "_TQST",
+        recipes: _TQST_RECIPES,
     },
     CommandTable {
         name: "_TRPY",

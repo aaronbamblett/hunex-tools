@@ -734,3 +734,53 @@ fn tiny_script_compiles_to_a_header_matching_real_files() {
     let script = crate::Script::parse(&bytes).unwrap();
     assert_eq!(script.encode(), bytes);
 }
+
+#[test]
+fn tqst_pushes_bank_before_slot_and_calls_0x271() {
+    for (source, expected) in [
+        (
+            "_TQST(7,0);",
+            vec![
+                ins(0, vec![num(0)]),
+                ins(0, vec![num(7)]),
+                ins(0x271, vec![]),
+            ],
+        ),
+        (
+            "_TQST(7,1);",
+            vec![
+                ins(0, vec![num(1)]),
+                ins(0, vec![num(7)]),
+                ins(0x271, vec![]),
+            ],
+        ),
+        (
+            "_TQST(-1,1);",
+            vec![
+                ins(0, vec![num(1)]),
+                ins(0, vec![num(0)]),
+                ins(0, vec![num(1)]),
+                ins(0x21, vec![]),
+                ins(0x271, vec![]),
+            ],
+        ),
+    ] {
+        assert_eq!(statement_list(source, &[]), expected, "{source}");
+    }
+}
+
+#[test]
+fn shake_bank_spellings_compile_and_round_trip() {
+    let text = "_STQK(7,0,0,34,-1,0,0);_STQK(-1,6,12,34,800,0,0);_STSW(13);                _TQST(7,0);_TQST(-1,1);_TQST(7,1);";
+    let statements = source::parse(text).unwrap();
+    let compiled = compile(&statements, &[]).unwrap();
+    let script = compiled.program().lower().unwrap();
+    assert_eq!(
+        script
+            .instructions()
+            .iter()
+            .filter(|instruction| instruction.opcode() == 0x271)
+            .count(),
+        3
+    );
+}

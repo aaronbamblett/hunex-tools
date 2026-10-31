@@ -748,6 +748,11 @@ pub const OPCODES: &[OpcodeInfo] = &[
         mnemonic: None,
     },
     OpcodeInfo {
+        id: 0x271,
+        operands: 0,
+        mnemonic: None,
+    },
+    OpcodeInfo {
         id: 0x272,
         operands: 0,
         mnemonic: None,
