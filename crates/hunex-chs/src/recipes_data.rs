@@ -3397,6 +3397,28 @@ static _SEFD_RECIPES: &[Recipe] = &[
     },
 ];
 
+static _SELA_SAVE_RECIPES: &[Recipe] = &[Recipe {
+    id: "_SELA_SAVE:0",
+    when: When {
+        arity: Some(0),
+        arity_range: None,
+        equals: &[],
+        kinds: &[],
+        one_of: &[],
+        tag_codes: &[],
+        state: &[],
+    },
+    fields: &[],
+    body: &[],
+    calls: &[610],
+    special: None,
+    set_state: &[],
+    platform_value: None,
+    platform_call: None,
+    target_field: 1,
+    target_slots: 0,
+    zero_unproven: false,
+}];
 static _SELD_RECIPES: &[Recipe] = &[Recipe {
     id: "_SELD:0",
     when: When {
@@ -11361,6 +11383,10 @@ pub static COMMANDS: &[CommandTable] = &[
     CommandTable {
         name: "_SEFD",
         recipes: _SEFD_RECIPES,
+    },
+    CommandTable {
+        name: "_SELA_SAVE",
+        recipes: _SELA_SAVE_RECIPES,
     },
     CommandTable {
         name: "_SELD",
