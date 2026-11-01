@@ -9525,6 +9525,65 @@ static _TSQK_RECIPES: &[Recipe] = &[Recipe {
     target_slots: 0,
     zero_unproven: false,
 }];
+static _TMSQK_RECIPES: &[Recipe] = &[Recipe {
+    id: "_TMSQK:0",
+    when: When {
+        arity: None,
+        arity_range: Some((0, 3)),
+        equals: &[],
+        kinds: &[],
+        one_of: &[],
+        tag_codes: &[],
+        state: &[],
+    },
+    fields: &[
+        Field {
+            source: 0,
+            encoder: Encoder::Value,
+            empty: &[LitInstr {
+                opcode: 0,
+                operands: &[LitOp::Num(1000)],
+            }],
+            absent: &[LitInstr {
+                opcode: 0,
+                operands: &[LitOp::Num(1000)],
+            }],
+        },
+        Field {
+            source: 1,
+            encoder: Encoder::Value,
+            empty: &[LitInstr {
+                opcode: 0,
+                operands: &[LitOp::Num(5)],
+            }],
+            absent: &[LitInstr {
+                opcode: 0,
+                operands: &[LitOp::Num(5)],
+            }],
+        },
+        Field {
+            source: 2,
+            encoder: Encoder::Value,
+            empty: &[LitInstr {
+                opcode: 0,
+                operands: &[LitOp::Num(5)],
+            }],
+            absent: &[LitInstr {
+                opcode: 0,
+                operands: &[LitOp::Num(5)],
+            }],
+        },
+    ],
+    body: &[],
+    calls: &[0x265],
+    special: None,
+    set_state: &[],
+    platform_value: None,
+    platform_call: None,
+    target_field: 1,
+    target_slots: 0,
+    zero_unproven: false,
+}];
 static _TRPY_RECIPES: &[Recipe] = &[Recipe {
     id: "_TRPY:0",
     when: When {
@@ -11790,6 +11849,10 @@ pub static COMMANDS: &[CommandTable] = &[
     CommandTable {
         name: "_TSQK",
         recipes: _TSQK_RECIPES,
+    },
+    CommandTable {
+        name: "_TMSQK",
+        recipes: _TMSQK_RECIPES,
     },
     CommandTable {
         name: "_TRPY",
