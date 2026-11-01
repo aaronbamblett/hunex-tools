@@ -401,6 +401,45 @@ static _END__RECIPES: &[Recipe] = &[Recipe {
     target_slots: 0,
     zero_unproven: false,
 }];
+static _FADW_RECIPES: &[Recipe] = &[Recipe {
+    id: "_FADW:0",
+    when: When {
+        arity: Some(3),
+        arity_range: None,
+        equals: &[],
+        kinds: &[
+            (0, ValueKind::Int),
+            (1, ValueKind::Int),
+            (2, ValueKind::Int),
+        ],
+        one_of: &[],
+        tag_codes: &[],
+        state: &[],
+    },
+    fields: &[],
+    body: &[
+        BodyPart::Arg {
+            arg: 2,
+            encoder: Encoder::Value,
+        },
+        BodyPart::Arg {
+            arg: 1,
+            encoder: Encoder::Value,
+        },
+        BodyPart::Arg {
+            arg: 0,
+            encoder: Encoder::Value,
+        },
+    ],
+    calls: &[611],
+    special: None,
+    set_state: &[],
+    platform_value: None,
+    platform_call: None,
+    target_field: 1,
+    target_slots: 0,
+    zero_unproven: false,
+}];
 static _FADS_RECIPES: &[Recipe] = &[Recipe {
     id: "_FADS:0",
     when: When {
@@ -11263,6 +11302,10 @@ pub static COMMANDS: &[CommandTable] = &[
     CommandTable {
         name: "_END_",
         recipes: _END__RECIPES,
+    },
+    CommandTable {
+        name: "_FADW",
+        recipes: _FADW_RECIPES,
     },
     CommandTable {
         name: "_FADS",

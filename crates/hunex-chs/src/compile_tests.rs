@@ -164,6 +164,30 @@ fn sela_save_calls_0x262_without_operands() {
 }
 
 #[test]
+fn fadw_pushes_preset_then_operand_then_mode_and_calls_0x263() {
+    assert_eq!(
+        statement_list("_FADW(4,0,0);", &[]),
+        vec![
+            ins(0, vec![num(0)]),
+            ins(0, vec![num(0)]),
+            ins(0, vec![num(4)]),
+            ins(0x263, vec![]),
+        ]
+    );
+    assert_eq!(
+        statement_list("_FADW(4,-90,16);", &[]),
+        vec![
+            ins(0, vec![num(16)]),
+            ins(0, vec![num(0)]),
+            ins(0, vec![num(90)]),
+            ins(0x21, vec![]),
+            ins(0, vec![num(4)]),
+            ins(0x263, vec![]),
+        ]
+    );
+}
+
+#[test]
 fn tomp_with_an_index_calls_0x1c2_and_bare_tomp_keeps_0x1c0() {
     assert_eq!(
         statement_list("_TOMP(8);", &[]),
