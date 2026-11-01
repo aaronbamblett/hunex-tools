@@ -777,6 +777,63 @@ fn ssw2_scr0424_800ms_shapes_approximate_with_persistent_stsw() {
 }
 
 #[test]
+fn tsqk_pushes_the_eleven_record_fields_and_calls_0x273() {
+    for (source, expected) in [
+        (
+            "_TSQK(3,0,1,10,20,2,3,4,6,-1,0);",
+            vec![
+                ins(0, vec![num(0)]),
+                ins(0, vec![num(0)]),
+                ins(0, vec![num(1)]),
+                ins(0x21, vec![]),
+                ins(0, vec![num(6)]),
+                ins(0, vec![num(4)]),
+                ins(0, vec![num(3)]),
+                ins(0, vec![num(2)]),
+                ins(0, vec![num(20)]),
+                ins(0, vec![num(10)]),
+                ins(0, vec![num(1)]),
+                ins(0, vec![num(0)]),
+                ins(0, vec![num(3)]),
+                ins(0x273, vec![]),
+            ],
+        ),
+        (
+            "_TSQK();",
+            vec![
+                ins(0, vec![num(0)]),
+                ins(0, vec![num(0xffffffff)]),
+                ins(0, vec![num(0)]),
+                ins(0, vec![num(0)]),
+                ins(0, vec![num(0)]),
+                ins(0, vec![num(0)]),
+                ins(0, vec![num(0)]),
+                ins(0, vec![num(0)]),
+                ins(0, vec![num(1)]),
+                ins(0, vec![num(0)]),
+                ins(0, vec![num(0)]),
+                ins(0x273, vec![]),
+            ],
+        ),
+    ] {
+        assert_eq!(statement_list(source, &[]), expected, "{source}");
+    }
+
+    let text = "_TSQK(3,0,1,10,20,2,3,4,6,-1,0);_TSQK(-1,1,3,7,15,60,120,1,0,-1,5);";
+    let statements = source::parse(text).unwrap();
+    let compiled = compile(&statements, &[]).unwrap();
+    let script = compiled.program().lower().unwrap();
+    assert_eq!(
+        script
+            .instructions()
+            .iter()
+            .filter(|instruction| instruction.opcode() == 0x273)
+            .count(),
+        2
+    );
+}
+
+#[test]
 fn tiny_script_compiles_to_a_header_matching_real_files() {
     let statements = source::parse("_END_();").unwrap();
     let compiled = compile(&statements, &[]).unwrap();

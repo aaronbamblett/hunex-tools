@@ -9345,6 +9345,161 @@ static _TQST_RECIPES: &[Recipe] = &[Recipe {
     target_slots: 0,
     zero_unproven: false,
 }];
+static _TSQK_RECIPES: &[Recipe] = &[Recipe {
+    id: "_TSQK:0",
+    when: When {
+        arity: None,
+        arity_range: Some((0, 11)),
+        equals: &[],
+        kinds: &[],
+        one_of: &[],
+        tag_codes: &[],
+        state: &[],
+    },
+    fields: &[
+        Field {
+            source: 0,
+            encoder: Encoder::Value,
+            empty: &[LitInstr {
+                opcode: 0,
+                operands: &[LitOp::Num(0)],
+            }],
+            absent: &[LitInstr {
+                opcode: 0,
+                operands: &[LitOp::Num(0)],
+            }],
+        },
+        Field {
+            source: 1,
+            encoder: Encoder::Value,
+            empty: &[LitInstr {
+                opcode: 0,
+                operands: &[LitOp::Num(0)],
+            }],
+            absent: &[LitInstr {
+                opcode: 0,
+                operands: &[LitOp::Num(0)],
+            }],
+        },
+        Field {
+            source: 2,
+            encoder: Encoder::Value,
+            empty: &[LitInstr {
+                opcode: 0,
+                operands: &[LitOp::Num(1)],
+            }],
+            absent: &[LitInstr {
+                opcode: 0,
+                operands: &[LitOp::Num(1)],
+            }],
+        },
+        Field {
+            source: 3,
+            encoder: Encoder::Value,
+            empty: &[LitInstr {
+                opcode: 0,
+                operands: &[LitOp::Num(0)],
+            }],
+            absent: &[LitInstr {
+                opcode: 0,
+                operands: &[LitOp::Num(0)],
+            }],
+        },
+        Field {
+            source: 4,
+            encoder: Encoder::Value,
+            empty: &[LitInstr {
+                opcode: 0,
+                operands: &[LitOp::Num(0)],
+            }],
+            absent: &[LitInstr {
+                opcode: 0,
+                operands: &[LitOp::Num(0)],
+            }],
+        },
+        Field {
+            source: 5,
+            encoder: Encoder::Value,
+            empty: &[LitInstr {
+                opcode: 0,
+                operands: &[LitOp::Num(0)],
+            }],
+            absent: &[LitInstr {
+                opcode: 0,
+                operands: &[LitOp::Num(0)],
+            }],
+        },
+        Field {
+            source: 6,
+            encoder: Encoder::Value,
+            empty: &[LitInstr {
+                opcode: 0,
+                operands: &[LitOp::Num(0)],
+            }],
+            absent: &[LitInstr {
+                opcode: 0,
+                operands: &[LitOp::Num(0)],
+            }],
+        },
+        Field {
+            source: 7,
+            encoder: Encoder::Value,
+            empty: &[LitInstr {
+                opcode: 0,
+                operands: &[LitOp::Num(0)],
+            }],
+            absent: &[LitInstr {
+                opcode: 0,
+                operands: &[LitOp::Num(0)],
+            }],
+        },
+        Field {
+            source: 8,
+            encoder: Encoder::Value,
+            empty: &[LitInstr {
+                opcode: 0,
+                operands: &[LitOp::Num(0)],
+            }],
+            absent: &[LitInstr {
+                opcode: 0,
+                operands: &[LitOp::Num(0)],
+            }],
+        },
+        Field {
+            source: 9,
+            encoder: Encoder::Value,
+            empty: &[LitInstr {
+                opcode: 0,
+                operands: &[LitOp::Num(4294967295)],
+            }],
+            absent: &[LitInstr {
+                opcode: 0,
+                operands: &[LitOp::Num(4294967295)],
+            }],
+        },
+        Field {
+            source: 10,
+            encoder: Encoder::Value,
+            empty: &[LitInstr {
+                opcode: 0,
+                operands: &[LitOp::Num(0)],
+            }],
+            absent: &[LitInstr {
+                opcode: 0,
+                operands: &[LitOp::Num(0)],
+            }],
+        },
+    ],
+    body: &[],
+    calls: &[0x273],
+    special: None,
+    set_state: &[],
+    platform_value: None,
+    platform_call: None,
+    target_field: 1,
+    target_slots: 0,
+    zero_unproven: false,
+}];
 static _TRPY_RECIPES: &[Recipe] = &[Recipe {
     id: "_TRPY:0",
     when: When {
@@ -11602,6 +11757,10 @@ pub static COMMANDS: &[CommandTable] = &[
     CommandTable {
         name: "_TQST",
         recipes: _TQST_RECIPES,
+    },
+    CommandTable {
+        name: "_TSQK",
+        recipes: _TSQK_RECIPES,
     },
     CommandTable {
         name: "_TRPY",
