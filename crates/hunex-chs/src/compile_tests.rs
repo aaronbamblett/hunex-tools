@@ -156,6 +156,14 @@ fn strr_pushes_angle_then_slot_and_calls_0x25d() {
 }
 
 #[test]
+fn fclt_pushes_type_and_calls_0x264() {
+    assert_eq!(
+        statement_list("_FCLT(9);", &[]),
+        vec![ins(0, vec![num(9)]), ins(0x264, vec![])]
+    );
+}
+
+#[test]
 fn sela_save_calls_0x262_without_operands() {
     assert_eq!(
         statement_list("_SELA_SAVE();", &[]),
