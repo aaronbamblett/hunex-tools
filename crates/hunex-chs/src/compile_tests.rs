@@ -842,6 +842,54 @@ fn tsqk_pushes_the_eleven_record_fields_and_calls_0x273() {
 }
 
 #[test]
+fn tmsqk_pushes_duration_and_amps_and_calls_0x265() {
+    for (source, expected) in [
+        (
+            "_TMSQK(500,5,1);",
+            vec![
+                ins(0, vec![num(1)]),
+                ins(0, vec![num(5)]),
+                ins(0, vec![num(500)]),
+                ins(0x265, vec![]),
+            ],
+        ),
+        (
+            "_TMSQK();",
+            vec![
+                ins(0, vec![num(5)]),
+                ins(0, vec![num(5)]),
+                ins(0, vec![num(1000)]),
+                ins(0x265, vec![]),
+            ],
+        ),
+        (
+            "_TMSQK(,,);",
+            vec![
+                ins(0, vec![num(5)]),
+                ins(0, vec![num(5)]),
+                ins(0, vec![num(1000)]),
+                ins(0x265, vec![]),
+            ],
+        ),
+    ] {
+        assert_eq!(statement_list(source, &[]), expected, "{source}");
+    }
+
+    let text = "_TMSQK(500,5,1);_TMSQK();";
+    let statements = source::parse(text).unwrap();
+    let compiled = compile(&statements, &[]).unwrap();
+    let script = compiled.program().lower().unwrap();
+    assert_eq!(
+        script
+            .instructions()
+            .iter()
+            .filter(|instruction| instruction.opcode() == 0x265)
+            .count(),
+        2
+    );
+}
+
+#[test]
 fn tiny_script_compiles_to_a_header_matching_real_files() {
     let statements = source::parse("_END_();").unwrap();
     let compiled = compile(&statements, &[]).unwrap();
