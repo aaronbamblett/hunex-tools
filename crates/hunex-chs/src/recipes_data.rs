@@ -759,6 +759,31 @@ static _FCSP_RECIPES: &[Recipe] = &[
         zero_unproven: false,
     },
 ];
+static _FCLT_RECIPES: &[Recipe] = &[Recipe {
+    id: "_FCLT:type",
+    when: When {
+        arity: Some(1),
+        arity_range: None,
+        equals: &[],
+        kinds: &[(0, ValueKind::Int)],
+        one_of: &[],
+        tag_codes: &[],
+        state: &[],
+    },
+    fields: &[],
+    body: &[BodyPart::Arg {
+        arg: 0,
+        encoder: Encoder::Value,
+    }],
+    calls: &[612],
+    special: None,
+    set_state: &[],
+    platform_value: None,
+    platform_call: None,
+    target_field: 1,
+    target_slots: 0,
+    zero_unproven: false,
+}];
 static _FLNT_RECIPES: &[Recipe] = &[Recipe {
     id: "_FLNT:source",
     when: When {
@@ -11477,6 +11502,10 @@ pub static COMMANDS: &[CommandTable] = &[
     CommandTable {
         name: "_FCSP",
         recipes: _FCSP_RECIPES,
+    },
+    CommandTable {
+        name: "_FCLT",
+        recipes: _FCLT_RECIPES,
     },
     CommandTable {
         name: "_FLNT",
