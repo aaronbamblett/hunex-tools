@@ -1014,3 +1014,32 @@ fn shake_bank_spellings_compile_and_round_trip() {
         3
     );
 }
+
+#[test]
+fn tsels_pushes_local_destination_then_question() {
+    assert_eq!(
+        statement_list("_TSELS($000001,_D000);", &[]),
+        vec![
+            ins(0, vec![num(0)]),
+            ins(3, vec![text("$000001")]),
+            ins(0x269, vec![])
+        ]
+    );
+    for input in [
+        "_TSELS();",
+        "_TSELS($000001);",
+        "_TSELS($000001,F000);",
+        "_TSELS(1,_D000);",
+        "_TSELS($000001,_D000,0);",
+    ] {
+        assert!(
+            compile(&source::parse(input).unwrap(), &[]).is_err(),
+            "{input}"
+        );
+    }
+    let statements = source::parse("_TSELS($000025,_D000);").unwrap();
+    let compiled = compile(&statements, &[]).unwrap();
+    assert!(compiled.warnings().is_empty());
+    let bytes = compiled.program().lower().unwrap().encode();
+    assert_eq!(crate::Script::parse(&bytes).unwrap().encode(), bytes);
+}
