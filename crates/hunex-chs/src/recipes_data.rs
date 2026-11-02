@@ -9606,6 +9606,59 @@ static _TNOP_RECIPES: &[Recipe] = &[Recipe {
     target_slots: 0,
     zero_unproven: false,
 }];
+static _TRDAS_RECIPES: &[Recipe] = &[Recipe {
+    id: "_TRDAS:0",
+    when: When {
+        arity: Some(2),
+        arity_range: None,
+        equals: &[],
+        kinds: &[(0, ValueKind::Int), (1, ValueKind::Int)],
+        one_of: &[],
+        tag_codes: &[],
+        state: &[],
+    },
+    fields: &[],
+    body: &[
+        BodyPart::Arg {
+            arg: 1,
+            encoder: Encoder::Value,
+        },
+        BodyPart::Arg {
+            arg: 0,
+            encoder: Encoder::Value,
+        },
+    ],
+    calls: &[0x267],
+    special: None,
+    set_state: &[],
+    platform_value: None,
+    platform_call: None,
+    target_field: 1,
+    target_slots: 0,
+    zero_unproven: false,
+}];
+static _TRDAS_END_RECIPES: &[Recipe] = &[Recipe {
+    id: "_TRDAS_END:0",
+    when: When {
+        arity: Some(0),
+        arity_range: None,
+        equals: &[],
+        kinds: &[],
+        one_of: &[],
+        tag_codes: &[],
+        state: &[],
+    },
+    fields: &[],
+    body: &[],
+    calls: &[0x268],
+    special: None,
+    set_state: &[],
+    platform_value: None,
+    platform_call: None,
+    target_field: 1,
+    target_slots: 0,
+    zero_unproven: false,
+}];
 static _TRPY_RECIPES: &[Recipe] = &[Recipe {
     id: "_TRPY:0",
     when: When {
@@ -11879,6 +11932,14 @@ pub static COMMANDS: &[CommandTable] = &[
     CommandTable {
         name: "_TMSQK",
         recipes: _TMSQK_RECIPES,
+    },
+    CommandTable {
+        name: "_TRDAS",
+        recipes: _TRDAS_RECIPES,
+    },
+    CommandTable {
+        name: "_TRDAS_END",
+        recipes: _TRDAS_END_RECIPES,
     },
     CommandTable {
         name: "_TRPY",

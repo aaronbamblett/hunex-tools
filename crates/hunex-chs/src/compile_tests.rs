@@ -907,6 +907,52 @@ fn tnop_calls_0x266_without_operands() {
 }
 
 #[test]
+fn trdas_pushes_row_then_id_and_calls_0x267() {
+    assert_eq!(
+        statement_list("_TRDAS(486,1);", &[]),
+        vec![
+            ins(0, vec![num(1)]),
+            ins(0, vec![num(486)]),
+            ins(0x267, vec![])
+        ],
+    );
+    for source in [
+        "_TRDAS();",
+        "_TRDAS(486);",
+        "_TRDAS(486,1,2);",
+        "_TRDAS(F001,1);",
+        "_TRDAS(486,F001);",
+    ] {
+        assert!(
+            compile(&source::parse(source).unwrap(), &[]).is_err(),
+            "{source}"
+        );
+    }
+}
+
+#[test]
+fn trdas_end_calls_0x268_without_operands() {
+    assert_eq!(
+        statement_list("_TRDAS_END();", &[]),
+        vec![ins(0x268, vec![])]
+    );
+    assert!(compile(&source::parse("_TRDAS_END(1);").unwrap(), &[]).is_err());
+    let statements = source::parse("_TRDAS(486,1);_TRDAS_END();").unwrap();
+    let compiled = compile(&statements, &[]).unwrap();
+    let script = compiled.program().lower().unwrap();
+    let bytes = script.encode();
+    assert_eq!(crate::Script::parse(&bytes).unwrap().encode(), bytes);
+    assert_eq!(
+        script
+            .instructions()
+            .iter()
+            .filter(|i| matches!(i.opcode(), 0x267 | 0x268))
+            .count(),
+        2
+    );
+}
+
+#[test]
 fn tiny_script_compiles_to_a_header_matching_real_files() {
     let statements = source::parse("_END_();").unwrap();
     let compiled = compile(&statements, &[]).unwrap();
