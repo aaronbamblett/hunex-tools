@@ -890,6 +890,23 @@ fn tmsqk_pushes_duration_and_amps_and_calls_0x265() {
 }
 
 #[test]
+fn tnop_calls_0x266_without_operands() {
+    assert_eq!(statement_list("_TNOP();", &[]), vec![ins(0x266, vec![])]);
+
+    let statements = source::parse("_TNOP();_TNOP();").unwrap();
+    let compiled = compile(&statements, &[]).unwrap();
+    let script = compiled.program().lower().unwrap();
+    assert_eq!(
+        script
+            .instructions()
+            .iter()
+            .filter(|instruction| instruction.opcode() == 0x266)
+            .count(),
+        2
+    );
+}
+
+#[test]
 fn tiny_script_compiles_to_a_header_matching_real_files() {
     let statements = source::parse("_END_();").unwrap();
     let compiled = compile(&statements, &[]).unwrap();

@@ -9584,6 +9584,28 @@ static _TMSQK_RECIPES: &[Recipe] = &[Recipe {
     target_slots: 0,
     zero_unproven: false,
 }];
+static _TNOP_RECIPES: &[Recipe] = &[Recipe {
+    id: "_TNOP:0",
+    when: When {
+        arity: Some(0),
+        arity_range: None,
+        equals: &[],
+        kinds: &[],
+        one_of: &[],
+        tag_codes: &[],
+        state: &[],
+    },
+    fields: &[],
+    body: &[],
+    calls: &[0x266],
+    special: None,
+    set_state: &[],
+    platform_value: None,
+    platform_call: None,
+    target_field: 1,
+    target_slots: 0,
+    zero_unproven: false,
+}];
 static _TRPY_RECIPES: &[Recipe] = &[Recipe {
     id: "_TRPY:0",
     when: When {
@@ -11833,6 +11855,10 @@ pub static COMMANDS: &[CommandTable] = &[
     CommandTable {
         name: "_STZ4",
         recipes: _STZ4_RECIPES,
+    },
+    CommandTable {
+        name: "_TNOP",
+        recipes: _TNOP_RECIPES,
     },
     CommandTable {
         name: "_TOMP",
