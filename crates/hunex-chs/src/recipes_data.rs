@@ -9659,6 +9659,37 @@ static _TRDAS_END_RECIPES: &[Recipe] = &[Recipe {
     target_slots: 0,
     zero_unproven: false,
 }];
+static _TSELS_RECIPES: &[Recipe] = &[Recipe {
+    id: "_TSELS:0",
+    when: When {
+        arity: Some(2),
+        arity_range: None,
+        equals: &[(1, "_D000")],
+        kinds: &[(0, ValueKind::Text)],
+        one_of: &[],
+        tag_codes: &[],
+        state: &[],
+    },
+    fields: &[],
+    body: &[
+        BodyPart::Arg {
+            arg: 1,
+            encoder: Encoder::FlagIndex,
+        },
+        BodyPart::Arg {
+            arg: 0,
+            encoder: Encoder::Value,
+        },
+    ],
+    calls: &[0x269],
+    special: None,
+    set_state: &[],
+    platform_value: None,
+    platform_call: None,
+    target_field: 1,
+    target_slots: 0,
+    zero_unproven: false,
+}];
 static _TRPY_RECIPES: &[Recipe] = &[Recipe {
     id: "_TRPY:0",
     when: When {
@@ -11940,6 +11971,10 @@ pub static COMMANDS: &[CommandTable] = &[
     CommandTable {
         name: "_TRDAS_END",
         recipes: _TRDAS_END_RECIPES,
+    },
+    CommandTable {
+        name: "_TSELS",
+        recipes: _TSELS_RECIPES,
     },
     CommandTable {
         name: "_TRPY",
