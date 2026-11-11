@@ -38,6 +38,10 @@ Texture data starts at `BRTD + 0x10` for the first texture. Each later texture s
 | 0x0B06 | RGBA8, 4 bytes per pixel | |
 | 0x1C06 | BC3 | Color from the color block, alpha from the alpha block (standard BC3). Confirmed on the two set B masks, which are white with the shape in alpha. |
 
+[code] The format code is a u32 of `(type << 8) | component`. Type `0x20` is BC7, component `0x01` is UNORM and `0x06` is sRGB, so BC7 is stored as `0x2001` or `0x2006`. The decoder matches whole codes, so it accepts BC7 as `0x2001` or `0x2006` and accepts no code outside the table (`crates/hunex-nx/src/decode.rs:30`). Decoding returns the stored bytes and does not convert between colour spaces.
+
+[data] The Tsukihime Switch scene textures checked, `IMG0008`, `IMG2161` and `IMG0597` in `w_allpac`, are all `0x2006` (BC7 sRGB). The Switch GPU converts sRGB texels to linear when it samples them. The RomFS `shader/` folder ships `nexl_nxshader_noalpha_srgb.bnsh` and `nexl_nxshader_normal_linear.bnsh` among its shaders. For tool users, `hunex nx to-png` writes the stored sRGB-encoded bytes unchanged, which is what a PC engine expects; do not linearise the PNG.
+
 Block decoding uses the `bcdec_rs` crate (MIT).
 
 ### Block-linear layout
