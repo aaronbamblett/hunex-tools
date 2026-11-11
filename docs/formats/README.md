@@ -9,3 +9,13 @@ Every claim in a note carries one of three labels:
 - **Open.** The behavior is not yet checked on the sample files or in the game. The note states what is not known.
 
 A note that is not labeled as verified in game does not claim the game accepts the format.
+
+Some claims come from the engine's code or the game's data rather than from this crate's output. These carry a source mark:
+
+- **[code]** Read from code, at the address or file given.
+- **[data]** Read from the game's data files, at the samples or counts given.
+- **[code; visible effect unverified]** Read from the code, but not checked on screen.
+
+T in an address is an offset in the Switch main module; S is a virtual address in Mahoyo's `WoH.exe`.
+
+[Animation tables](animation-table.md): the per-animation keyframe data the engine's evaluator reads. The current tools do not read or write it.
