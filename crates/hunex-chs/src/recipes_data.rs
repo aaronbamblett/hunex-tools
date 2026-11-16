@@ -9690,6 +9690,55 @@ static _TSELS_RECIPES: &[Recipe] = &[Recipe {
     target_slots: 0,
     zero_unproven: false,
 }];
+static _TSHK_RECIPES: &[Recipe] = &[Recipe {
+    id: "_TSHK:source",
+    when: When {
+        arity: Some(5),
+        arity_range: None,
+        equals: &[],
+        kinds: &[
+            (0, ValueKind::Int),
+            (1, ValueKind::Int),
+            (2, ValueKind::Int),
+            (3, ValueKind::Int),
+            (4, ValueKind::Int),
+        ],
+        one_of: &[],
+        tag_codes: &[],
+        state: &[],
+    },
+    fields: &[],
+    body: &[
+        BodyPart::Arg {
+            arg: 4,
+            encoder: Encoder::Value,
+        },
+        BodyPart::Arg {
+            arg: 3,
+            encoder: Encoder::Value,
+        },
+        BodyPart::Arg {
+            arg: 2,
+            encoder: Encoder::Value,
+        },
+        BodyPart::Arg {
+            arg: 1,
+            encoder: Encoder::Value,
+        },
+        BodyPart::Arg {
+            arg: 0,
+            encoder: Encoder::Value,
+        },
+    ],
+    calls: &[0x26a],
+    special: None,
+    set_state: &[],
+    platform_value: None,
+    platform_call: None,
+    target_field: 1,
+    target_slots: 0,
+    zero_unproven: false,
+}];
 static _TRPY_RECIPES: &[Recipe] = &[Recipe {
     id: "_TRPY:0",
     when: When {
@@ -11963,6 +12012,10 @@ pub static COMMANDS: &[CommandTable] = &[
     CommandTable {
         name: "_TMSQK",
         recipes: _TMSQK_RECIPES,
+    },
+    CommandTable {
+        name: "_TSHK",
+        recipes: _TSHK_RECIPES,
     },
     CommandTable {
         name: "_TRDAS",
