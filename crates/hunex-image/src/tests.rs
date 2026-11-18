@@ -308,8 +308,10 @@ fn a_header_field_beyond_u16_is_an_error_not_a_truncated_value() {
 
 #[test]
 fn canvas_limit_covers_full_story_and_rejects_larger_allocations() {
-    assert_eq!(canvas_pixels(11264, 7680), Ok(MAX_CANVAS_PIXELS));
-    assert_eq!(canvas_pixels(10752, 6400), Ok(68_812_800));
+    assert_eq!(canvas_pixels(11_520, 7_680), Ok(MAX_CANVAS_PIXELS));
+    assert_eq!(canvas_pixels(11_392, 7_680), Ok(87_490_560));
+    assert_eq!(canvas_pixels(11_264, 7_680), Ok(86_507_520));
+    assert_eq!(canvas_pixels(10_752, 6_400), Ok(68_812_800));
     for (width, height) in [(MAX_CANVAS_PIXELS + 1, 1), (usize::MAX, 2)] {
         let error = canvas_pixels(width, height).unwrap_err();
         assert_eq!(
