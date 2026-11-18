@@ -51,8 +51,9 @@ const HEP_CONSTANTS: [u32; 3] = [0x2530_0000, 6, 16];
 const HEP_TRANSPARENCY: u32 = 2;
 const DEFAULT_TILE: (usize, usize) = (512, 256);
 const DEFAULT_CROP: usize = 17;
-/// Allocation guard covering Tsukihime's largest padded canvas (11264x7680), within PC u32 RGBA sizes.
-pub const MAX_CANVAS_PIXELS: usize = 11_264 * 7_680;
+/// Allocation guard: Tsukihime's largest padded canvas is img1481 (11200x7500); at the converter's
+/// 128- or 256-pixel tiles that is at most 11520x7680. The engine's u16 header fields allow more.
+pub const MAX_CANVAS_PIXELS: usize = 11_520 * 7_680;
 
 /// Maps a stored 7-bit alpha code to alpha: the code is doubled, with bit 6 copied into bit 0;
 /// codes with bit 7 set mean opaque.
